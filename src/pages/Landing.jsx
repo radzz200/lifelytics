@@ -62,8 +62,13 @@ export default function Landing() {
       className="min-h-screen relative overflow-hidden"
     >
       {/* Background Orbs (Replicating past conversation request implicitly) */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40vw] h-[40vw] bg-teal rounded-full mix-blend-screen filter blur-[100px] opacity-10 animate-pulse"></div>
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40vw] h-[40vw] bg-amber rounded-full mix-blend-screen filter blur-[100px] opacity-10 animate-pulse" style={{ animationDelay: '2s' }}></div>
+      <div className="absolute inset-0 z-0 overflow-hidden bg-navy">
+        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop')] bg-cover bg-center opacity-10 mix-blend-screen animate-pulse"></div>
+        <div className="absolute inset-0 bg-gradient-to-b from-navy via-navy/80 to-navy"></div>
+        <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-teal/10 via-transparent to-transparent"></div>
+        <div className="absolute top-[-10%] left-[-10%] w-[40vw] h-[40vw] bg-teal rounded-full mix-blend-screen filter blur-[100px] opacity-10 animate-pulse"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40vw] h-[40vw] bg-amber rounded-full mix-blend-screen filter blur-[100px] opacity-10 animate-pulse" style={{ animationDelay: '2s' }}></div>
+      </div>
 
       {/* Hero Section */}
       <section className="relative pt-32 pb-20 px-6 md:px-12 max-w-7xl mx-auto flex flex-col md:flex-row items-center">
@@ -74,8 +79,8 @@ export default function Landing() {
             transition={{ delay: 0.2 }}
             className="text-5xl md:text-7xl font-bold leading-tight mb-6"
           >
-            Decode Your <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal to-amber">Health Destiny</span>
+            Explainable <br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal to-blue-500">Health Intelligence</span>
           </motion.h1>
           
           <motion.p 
@@ -84,7 +89,7 @@ export default function Landing() {
             transition={{ delay: 0.3 }}
             className="text-xl text-gray-300 mb-8 max-w-lg"
           >
-            Browser-native ML predicts your lifespan and generates a personalised action plan to extend it. Zero server required.
+            Transparent, scientifically-grounded AI that doesn't just predict your lifespan, but explains exactly why—and how to improve it.
           </motion.p>
           
           <motion.div 
@@ -94,10 +99,10 @@ export default function Landing() {
             className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start"
           >
             <button onClick={() => navigate('/onboarding')} className="btn-primary flex items-center justify-center gap-2 group">
-              Predict My Lifespan <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              Talk to AI Assistant <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </button>
-            <button onClick={() => navigate('/upload')} className="btn-secondary">
-              Doctor / Cohort Portal
+            <button onClick={() => navigate('/doctor-portal')} className="btn-secondary">
+              Clinical Portal
             </button>
           </motion.div>
 
@@ -149,15 +154,15 @@ export default function Landing() {
       {/* How it Works */}
       <section className="py-24 px-6 max-w-7xl mx-auto">
         <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold mb-4">How LifeSpan AI Works</h2>
-          <p className="text-gray-400 max-w-2xl mx-auto">Three simple steps to understand your current health trajectory and how to change it.</p>
+          <h2 className="text-4xl font-bold mb-4">Why LifeLytics?</h2>
+          <p className="text-gray-400 max-w-2xl mx-auto">A research-grade platform built for scientific transparency and actionable results.</p>
         </div>
 
         <div className="grid md:grid-cols-3 gap-8">
           {[
-            { icon: Activity, title: '1. Input Data', desc: 'Securely enter your lifestyle, genetic, and health data. Everything stays in your browser.' },
-            { icon: Brain, title: '2. ML Analysis', desc: 'Our TensorFlow.js engine cross-references 40+ factors against WHO and NHANES datasets.' },
-            { icon: Shield, title: '3. Action Plan', desc: 'Get your precise LifeScore and a personalised, 12-week plan to extend your healthspan.' }
+            { icon: Brain, title: 'AI-Based Prediction', desc: 'Deterministic modeling cross-referenced against WHO datasets for unparalleled accuracy.' },
+            { icon: Activity, title: 'Lifestyle Insights', desc: 'Understand exactly how your habits (like smoking or exercise) quantitatively alter your lifespan.' },
+            { icon: Shield, title: 'Personalized Recommendations', desc: 'Receive a clinical-grade action plan tailored to your specific risk factors and age group.' }
           ].map((step, i) => (
             <motion.div 
               key={i}
@@ -213,7 +218,7 @@ export default function Landing() {
       {/* Footer */}
       <footer className="border-t border-border/50 py-12 px-6">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center text-gray-500 text-sm">
-          <p>© {new Date().getFullYear()} LifeSpan AI. All data processed locally.</p>
+          <p>© {new Date().getFullYear()} LifeLytics. All data processed locally.</p>
           <div className="mt-4 md:mt-0 flex flex-col md:flex-row items-center gap-4">
             <p>Thesis Project: A Zero-Infrastructure Approach to Accessible Health Intelligence</p>
             <a href="https://github.com" target="_blank" rel="noreferrer" className="text-teal hover:underline flex items-center gap-1">

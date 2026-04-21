@@ -1,17 +1,18 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../context/UserContext';
-import { predictLifespan, loadModel } from '../ml/predict';
+import { calculateLifespan } from '../ml/healthPredictEngine';
 import LifeScoreGauge from '../components/LifeScoreGauge';
 import RiskRadar from '../components/RiskRadar';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { AlertTriangle, TrendingUp, Settings, Activity } from 'lucide-react';
+import { AlertTriangle, TrendingUp, Settings, Activity, Download, Apple, Dumbbell, Heart, ClipboardList, Shield } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { userData, predictions, setPredictions } = useUser();
+  const { userData, updateUserData, predictions, setPredictions } = useUser();
   const [loading, setLoading] = useState(true);
+  const hasSaved = useRef(false);
 
   useEffect(() => {
     if (!userData || Object.keys(userData).length === 0) {
@@ -20,8 +21,39 @@ export default function Dashboard() {
     }
 
     const runPrediction = async () => {
-      await loadModel();
-      const result = await predictLifespan(userData);
+      // Wait briefly so loading animation displays smoothly
+      await new Promise(r => setTimeout(r, 600));
+      const result = calculateLifespan(userData);
+      
+      if (userData.isNewEntry && !hasSaved.current) {
+        hasSaved.current = true;
+        const history = JSON.parse(localStorage.getItem('lifelytics_manual_history') || '[]');
+        
+        // Prevent StrictMode double-save by checking timestamp of last entry
+        const now = Date.now();
+        if (history.length > 0 && (now - history[history.length - 1].id < 2000)) {
+           updateUserData({ isNewEntry: false });
+        } else {
+          // Remove the flag so it doesn't get saved into the history
+          const dataToSave = { ...userData };
+          delete dataToSave.isNewEntry;
+
+          const newEntry = {
+              id: now,
+              date: new Date().toISOString(),
+              userData: dataToSave,
+              prediction: result.prediction,
+              base: result.base,
+              score: Math.min(100, Math.max(0, (result.prediction / 100) * 100))
+          };
+          history.push(newEntry);
+          localStorage.setItem('lifelytics_manual_history', JSON.stringify(history));
+
+          // Clear the flag from UserContext so reloads/loads don't duplicate
+          updateUserData({ isNewEntry: false });
+        }
+      }
+
       setPredictions(result);
       setLoading(false);
     };
@@ -50,16 +82,6 @@ export default function Dashboard() {
   const riskColor = riskLevel === 'HIGH' ? 'text-danger border-danger' : riskLevel === 'MODERATE' ? 'text-amber border-amber' : 'text-teal border-teal';
 
   // Radar Data Formulation
-  const radarData = [
-    { subject: 'Diet', score: 50 + (modifiers.diet || 0) * 10, ideal: 80 },
-    { subject: 'Exercise', score: 50 + (modifiers.exercise || 0) * 10, ideal: 90 },
-    { subject: 'Sleep', score: 50 + (modifiers.sleep || 0) * 10, ideal: 85 },
-    { subject: 'Stress', score: 80 + (modifiers.stress || 0) * 10, ideal: 50 }, // lower is better, but radar usually higher is better. Let's map it:
-    { subject: 'Vices', score: 50 + ((modifiers.smoking || 0) + (modifiers.alcohol || 0)) * 5, ideal: 95 },
-    { subject: 'Medical', score: 50 + (modifiers.chronic || 0) * 5, ideal: 90 }
-  ];
-
-  // Adjust radar scores to be 0-100 logic where higher = healthier
   const adjustedRadarData = [
     { subject: 'Diet', score: Math.min(100, Math.max(0, 50 + (modifiers.diet || 0) * 10)), ideal: 80 },
     { subject: 'Exercise', score: Math.min(100, Math.max(0, 50 + (modifiers.exercise || 0) * 10)), ideal: 90 },
@@ -75,18 +97,72 @@ export default function Dashboard() {
     { name: 'Top 10%', val: base + 10 }
   ];
 
-  // Top Risk Factors
   const sortedModifiers = Object.entries(modifiers).sort((a, b) => a[1] - b[1]);
   const topRisks = sortedModifiers.filter(m => m[1] < 0).slice(0, 3);
+
+  // Generate Personalized Recommendations
+  const generateRoutines = () => {
+    let diet = { title: "Balanced Maintenance", desc: "Maintain your current diet with a focus on whole foods, lean proteins, and hydration." };
+    let workout = { title: "Active Lifestyle", desc: "Continue your current physical activities, ensuring a mix of cardio and strength training." };
+    let lifestyle = { title: "Stress Management", desc: "Incorporate 10 minutes of daily mindfulness or meditation to maintain optimal mental health." };
+
+    const bmi = userData.weight && userData.height ? (userData.weight / Math.pow(userData.height/100, 2)) : 25;
+    
+    // Diet Logic
+    if (bmi > 25) {
+      diet = { title: "Caloric Deficit & High Protein", desc: "Focus on a mild caloric deficit. Increase lean protein and fiber intake to promote satiety while reducing processed carbs." };
+    } else if (modifiers.chronic && modifiers.chronic < 0) {
+      diet = { title: "Mediterranean Protocol", desc: "Strict adherence to a Mediterranean diet: high in omega-3s, olive oil, nuts, and zero processed sugars to support heart health." };
+    } else if (userData.diet === 'vegan' || userData.diet === 'vegetarian') {
+      diet = { title: "Plant-Based Optimization", desc: "Ensure adequate B12, Iron, and complete amino acid profiles through diverse plant sources or supplementation." };
+    }
+
+    // Workout Logic
+    const age = parseInt(userData.age) || 30;
+    const exerciseLvl = parseInt(userData.exercise_freq) || 0;
+    
+    if (exerciseLvl <= 1) {
+      workout = { title: "Foundation Building", desc: "Start with 20 minutes of daily Zone 2 cardio (brisk walking). Add 2 days of light resistance training to build metabolic baseline." };
+    } else if (age > 60) {
+      workout = { title: "Longevity & Mobility", desc: "Prioritize joint mobility, balance exercises (yoga/tai chi), and moderate strength training to preserve bone density." };
+    } else if (exerciseLvl >= 4) {
+      workout = { title: "Athletic Optimization", desc: "Maintain high-intensity interval training (HIIT) combined with heavy compound lifts 3-4x weekly. Focus on recovery." };
+    }
+
+    // Lifestyle/Stress Logic
+    const stressLvl = parseInt(userData.stress) || 5;
+    if (stressLvl > 7) {
+      lifestyle = { title: "Active Decompression", desc: "Critical: Implement non-negotiable downtime. Recommended 15 mins daily breathwork (e.g. box breathing) and strict sleep hygiene." };
+    } else if (modifiers.smoking && modifiers.smoking < 0) {
+      lifestyle = { title: "Cessation Protocol", desc: "Prioritize smoking cessation programs. Replace the habit trigger with physical activity or mindfulness exercises." };
+    }
+
+    return { diet, workout, lifestyle };
+  };
+
+  const routines = generateRoutines();
+
+  const handleDownload = () => {
+    window.print();
+  };
 
   return (
     <motion.div 
       initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-      className="min-h-screen pt-24 pb-12 px-6 max-w-7xl mx-auto"
+      className="min-h-screen pt-24 pb-12 px-6 max-w-7xl mx-auto print:pt-8 print:px-0 print:bg-white print:text-black"
     >
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-display font-bold">Health Dashboard</h1>
-        <div className="flex gap-4">
+      <div className="flex flex-col md:flex-row justify-between items-center mb-8 print:mb-4">
+        <h1 className="text-3xl font-display font-bold print:text-black">LifeLytics Health Dashboard</h1>
+        <div className="flex flex-wrap gap-4 mt-4 md:mt-0 print:hidden">
+          <button onClick={() => navigate('/history')} className="btn-secondary flex items-center gap-2 py-2 text-sm bg-surface hover:bg-surface/80 border border-teal/50 text-teal">
+            <ClipboardList className="w-4 h-4" /> Patient Records
+          </button>
+          <button onClick={() => navigate('/science')} className="btn-secondary flex items-center gap-2 py-2 text-sm bg-surface hover:bg-surface/80 border border-blue-500/50 text-blue-400">
+            <Shield className="w-4 h-4" /> About Model
+          </button>
+          <button onClick={handleDownload} className="btn-secondary flex items-center gap-2 py-2 text-sm bg-surface hover:bg-surface/80 border border-border">
+            <Download className="w-4 h-4" /> Download Report
+          </button>
           <button onClick={() => navigate('/simulate')} className="btn-secondary flex items-center gap-2 py-2 text-sm">
             <Settings className="w-4 h-4" /> Simulator
           </button>
@@ -99,30 +175,34 @@ export default function Dashboard() {
       <div className="grid lg:grid-cols-3 gap-8">
         {/* Left Column */}
         <div className="lg:col-span-1 space-y-8">
-          <div className="glass-panel p-6 flex flex-col items-center">
+          <div className="glass-panel p-6 flex flex-col items-center print:border-gray-200 print:shadow-none print:bg-gray-50">
             <LifeScoreGauge score={score} yearsPredicted={prediction} />
-            <div className={`mt-6 px-4 py-1 rounded-full border ${riskColor} bg-surface font-bold text-sm tracking-widest`}>
+            <div className={`mt-6 px-4 py-1 rounded-full border ${riskColor} bg-surface font-bold text-sm tracking-widest print:bg-white`}>
               {riskLevel} RISK
             </div>
-            <p className="text-gray-400 text-sm mt-4 text-center">
+            <p className="text-gray-400 text-sm mt-4 text-center print:text-gray-600">
               Based on {predictions.modelUsed}
             </p>
           </div>
 
-          <div className="glass-panel p-6">
-            <h3 className="font-semibold mb-4 text-gray-300">Quick Metrics</h3>
+          <div className="glass-panel p-6 print:border-gray-200 print:shadow-none">
+            <h3 className="font-semibold mb-4 text-gray-300 print:text-gray-800">Quick Metrics</h3>
             <div className="space-y-4">
-              <div className="flex justify-between border-b border-border/50 pb-2">
-                <span className="text-gray-400">Current Age</span>
-                <span className="font-mono text-lg">{currentAge}</span>
+              <div className="flex justify-between border-b border-border/50 pb-2 print:border-gray-300">
+                <span className="text-gray-400 print:text-gray-600">Current Age</span>
+                <span className="font-mono text-lg print:text-black">{currentAge}</span>
               </div>
-              <div className="flex justify-between border-b border-border/50 pb-2">
-                <span className="text-gray-400">Predicted Lifespan</span>
-                <span className="font-mono text-lg text-teal">{prediction}</span>
+              <div className="flex justify-between border-b border-border/50 pb-2 print:border-gray-300">
+                <span className="text-gray-400 print:text-gray-600">Predicted Lifespan</span>
+                <span className="font-mono text-lg text-teal print:text-teal-700">{prediction}</span>
+              </div>
+              <div className="flex justify-between border-b border-border/50 pb-2 print:border-gray-300">
+                <span className="text-gray-400 print:text-gray-600">Expected Range</span>
+                <span className="font-mono text-lg print:text-black">{Math.max(40, prediction - 4)} - {Math.min(100, prediction + 5)} yrs</span>
               </div>
               <div className="flex justify-between pb-2">
-                <span className="text-gray-400">Estimated Years Left</span>
-                <span className="font-mono text-lg">{yearsRemaining}</span>
+                <span className="text-gray-400 print:text-gray-600">Estimated Years Left</span>
+                <span className="font-mono text-lg print:text-black">{yearsRemaining}</span>
               </div>
             </div>
           </div>
@@ -130,33 +210,17 @@ export default function Dashboard() {
 
         {/* Right Column */}
         <div className="lg:col-span-2 space-y-8">
-          {/* Persona Badge */}
-          <div className="glass-panel p-6 border-l-4 border-l-amber flex gap-4 items-start">
-            <div className="bg-amber/20 p-3 rounded-xl">
-              <Activity className="text-amber w-6 h-6" />
-            </div>
-            <div>
-              <h3 className="text-xl font-bold text-amber mb-2">Persona: The Stressed Professional</h3>
-              <p className="text-gray-300 text-sm leading-relaxed">
-                High stress, sedentary lifestyle, average diet. Peer group: 38% of your age cohort. 
-                Your predicted lifespan is {((base+10) - prediction).toFixed(1)} years below your cohort's top performers.
-              </p>
-              <button onClick={() => navigate('/simulate')} className="text-teal hover:underline text-sm mt-3 inline-block">
-                See what changed their outcome &rarr;
-              </button>
-            </div>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-8">
+          
+          <div className="grid md:grid-cols-2 gap-8 print:grid-cols-2 print:gap-4">
             {/* Radar Chart */}
-            <div className="glass-panel p-6">
-              <h3 className="font-semibold mb-4 text-gray-300">Lifestyle Balance</h3>
+            <div className="glass-panel p-6 print:border-gray-200 print:shadow-none">
+              <h3 className="font-semibold mb-4 text-gray-300 print:text-gray-800">Lifestyle Balance</h3>
               <RiskRadar data={adjustedRadarData} />
             </div>
 
             {/* Comparison Chart */}
-            <div className="glass-panel p-6 flex flex-col justify-between">
-              <h3 className="font-semibold mb-4 text-gray-300">Cohort Comparison</h3>
+            <div className="glass-panel p-6 flex flex-col justify-between print:border-gray-200 print:shadow-none">
+              <h3 className="font-semibold mb-4 text-gray-300 print:text-gray-800">Cohort Comparison</h3>
               <div className="h-48">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={comparisonData} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
@@ -174,28 +238,78 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Top Risk Factors */}
-          <div className="glass-panel p-6">
-            <h3 className="font-semibold mb-4 text-gray-300">Top Modifiable Risks</h3>
+          {/* Explainable AI: Why this prediction? */}
+          <div className="glass-panel p-6 print:border-gray-200 print:shadow-none">
+            <h3 className="font-semibold mb-2 text-gray-300 print:text-gray-800">Why this prediction? (Feature Contributions)</h3>
+            
+            {/* Dynamic AI Narrative */}
+            <div className="bg-surface/50 p-4 rounded-xl border border-border/30 mb-6 print:bg-gray-50 print:border-gray-200">
+              <p className="text-sm leading-relaxed text-gray-300 print:text-gray-800">
+                <strong className="text-teal print:text-teal-700">AI Explanation:</strong> Your predicted {prediction < base ? 'lower' : 'higher'} lifespan of <strong className="text-white print:text-black">{prediction} years</strong> is primarily influenced by 
+                {topRisks.length > 0 
+                  ? ` negative impacts from ${topRisks.map(r => r[0].replace('_', ' ')).join(', ')}` 
+                  : ' protective lifestyle factors and a lack of significant chronic risks'}. 
+                {sortedModifiers.filter(m => m[1] > 0).length > 0 && ` Positive factors such as ${sortedModifiers.filter(m => m[1] > 0).slice(0, 2).map(r => r[0].replace('_', ' ')).join(' and ')} are adding beneficial years to your trajectory.`}
+              </p>
+            </div>
+
             <div className="grid md:grid-cols-3 gap-4">
               {topRisks.length > 0 ? topRisks.map(([factor, impact]) => (
-                <div key={factor} className="bg-surface border border-border/50 rounded-xl p-4">
+                <div key={factor} className="bg-surface border border-border/50 rounded-xl p-4 print:bg-white print:border-gray-300">
                   <div className="flex items-center gap-2 mb-2">
-                    <AlertTriangle className="text-danger w-4 h-4" />
-                    <span className="capitalize font-medium text-sm">{factor.replace('_', ' ')}</span>
+                    <AlertTriangle className="text-danger w-4 h-4 print:text-red-600" />
+                    <span className="capitalize font-medium text-sm print:text-gray-800">{factor.replace('_', ' ')}</span>
                   </div>
-                  <div className="text-2xl font-bold font-mono text-danger">{impact.toFixed(1)} <span className="text-xs text-gray-400 font-sans font-normal">yrs</span></div>
-                  <button onClick={() => navigate('/simulate')} className="w-full mt-3 bg-danger/10 hover:bg-danger/20 text-danger text-xs py-2 rounded-lg transition-colors">
-                    Fix this
-                  </button>
+                  <div className="text-xl font-bold font-mono text-danger print:text-red-600">
+                    reduces by {Math.abs(impact).toFixed(1)} <span className="text-xs text-gray-400 font-sans font-normal print:text-gray-500">yrs</span>
+                  </div>
                 </div>
               )) : (
-                <div className="col-span-3 text-center text-gray-400 py-6">
+                <div className="col-span-3 text-center text-gray-400 py-6 print:text-gray-600">
                   No major modifiable risks identified. Great job!
                 </div>
               )}
             </div>
           </div>
+
+          {/* Personalized Health Protocol */}
+          <div className="glass-panel p-6 print:border-gray-200 print:shadow-none print:break-inside-avoid">
+            <h3 className="text-2xl font-display font-semibold mb-6 text-white print:text-black">Personalized Longevity Protocol</h3>
+            <div className="space-y-6">
+              
+              <div className="flex gap-4 items-start">
+                <div className="bg-emerald-500/20 p-3 rounded-xl print:bg-green-100">
+                  <Apple className="text-emerald-400 w-6 h-6 print:text-green-700" />
+                </div>
+                <div>
+                  <h4 className="text-lg font-bold text-emerald-300 print:text-green-800 mb-1">Nutrition: {routines.diet.title}</h4>
+                  <p className="text-gray-300 text-sm leading-relaxed print:text-gray-700">{routines.diet.desc}</p>
+                </div>
+              </div>
+
+              <div className="flex gap-4 items-start">
+                <div className="bg-blue-500/20 p-3 rounded-xl print:bg-blue-100">
+                  <Dumbbell className="text-blue-400 w-6 h-6 print:text-blue-700" />
+                </div>
+                <div>
+                  <h4 className="text-lg font-bold text-blue-300 print:text-blue-800 mb-1">Physical Activity: {routines.workout.title}</h4>
+                  <p className="text-gray-300 text-sm leading-relaxed print:text-gray-700">{routines.workout.desc}</p>
+                </div>
+              </div>
+
+              <div className="flex gap-4 items-start">
+                <div className="bg-purple-500/20 p-3 rounded-xl print:bg-purple-100">
+                  <Heart className="text-purple-400 w-6 h-6 print:text-purple-700" />
+                </div>
+                <div>
+                  <h4 className="text-lg font-bold text-purple-300 print:text-purple-800 mb-1">Lifestyle & Mind: {routines.lifestyle.title}</h4>
+                  <p className="text-gray-300 text-sm leading-relaxed print:text-gray-700">{routines.lifestyle.desc}</p>
+                </div>
+              </div>
+
+            </div>
+          </div>
+          
         </div>
       </div>
     </motion.div>

@@ -7,6 +7,8 @@ import Upload from './pages/Upload';
 import DoctorPortal from './pages/DoctorPortal';
 import Timeline from './pages/Timeline';
 import ActionPlan from './pages/ActionPlan';
+import ManualHistory from './pages/ManualHistory';
+import Science from './pages/Science';
 
 function App() {
   return (
@@ -22,7 +24,12 @@ function App() {
           <Route path="/doctor-portal" element={<DoctorPortal />} />
           <Route path="/timeline" element={<Timeline />} />
           <Route path="/action-plan" element={<ActionPlan />} />
+          <Route path="/history" element={<ManualHistory />} />
+          <Route path="/science" element={<Science />} />
         </Routes>
+        <footer className="w-full text-center py-4 bg-navy/80 backdrop-blur-sm border-t border-border text-xs text-gray-500 fixed bottom-0 z-50 print:hidden">
+          This tool is for educational purposes only and not medical advice.
+        </footer>
       </div>
     </Router>
   );

@@ -27,6 +27,8 @@ export const UserProvider = ({ children }) => {
 
   const updateUserData = (stepData) => {
     setUserData(prev => ({ ...prev, ...stepData }));
+    setPredictions(null);
+    localStorage.removeItem('lifespan_predictions');
   };
 
   const clearData = () => {
