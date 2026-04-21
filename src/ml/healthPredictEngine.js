@@ -129,27 +129,60 @@ export function getFactorsText(props) {
   return factors.join(" • ");
 }
 
+function normalizeValue(val) {
+  if (val === undefined || val === null) return 0;
+  const s = String(val).toLowerCase().trim();
+  if (s === '1' || s === 'yes' || s === 'true' || s === 'y' || s === 'active') return 1;
+  if (s === '0' || s === 'no' || s === 'false' || s === 'n' || s === 'inactive') return 0;
+  return parseFloat(s) || 0;
+}
+
+function normalizeRow(row) {
+  const normalized = {};
+  const keys = Object.keys(row);
+  
+  const findKey = (variants) => {
+    const found = keys.find(k => variants.includes(k.toLowerCase().trim().replace(/ /g, '_')));
+    return found ? row[found] : null;
+  };
+
+  normalized.age = parseInt(findKey(['age'])) || 50;
+  normalized.gender = findKey(['gender', 'sex']) || 'Unknown';
+  normalized.bmi = parseFloat(findKey(['bmi', 'body_mass_index'])) || 25;
+  normalized.exercise_level = normalizeValue(findKey(['exercise', 'exercise_level', 'activity_level']));
+  normalized.smoking = normalizeValue(findKey(['smoking', 'smoker']));
+  normalized.alcohol = normalizeValue(findKey(['alcohol', 'drinker']));
+  normalized.blood_pressure = parseInt(findKey(['blood_pressure', 'bp', 'systolic'])) || 120;
+  normalized.cholesterol = parseInt(findKey(['cholesterol', 'chol'])) || 200;
+  normalized.glucose = parseInt(findKey(['glucose', 'sugar'])) || 90;
+  normalized.heart_disease = normalizeValue(findKey(['heart_disease', 'heart_condition']));
+  normalized.diabetes = normalizeValue(findKey(['diabetes', 'diabetic']));
+  normalized.stroke = normalizeValue(findKey(['stroke']));
+
+  return normalized;
+}
+
 export function processHealthData(rawData) {
   if (!rawData || rawData.length < 1) {
-    throw new Error("Insufficient data - need at least 2 records");
+    throw new Error("Insufficient data - need at least 1 record");
   }
 
+  // Tracking how many "real" markers we found vs defaults
+  let markersFoundCount = 0;
+  const essentialKeys = ['age', 'bmi', 'blood_pressure', 'cholesterol', 'heart_disease', 'diabetes', 'smoking'];
+
   // Parse and calculate lifespan for everyone
-  const processed = rawData.map(row => {
-    // Basic cleaning to ensure values exist
-    const cleanedRow = {
-      age: parseInt(row.age) || 50,
-      gender: row.gender || 'Unknown',
-      bmi: parseFloat(row.bmi) || 25,
-      exercise_level: parseInt(row.exercise_level) || 0,
-      smoking: parseInt(row.smoking) || 0,
-      alcohol: parseInt(row.alcohol) || 0,
-      blood_pressure: parseInt(row.blood_pressure) || 120,
-      cholesterol: parseInt(row.cholesterol) || 200,
-      heart_disease: parseInt(row.heart_disease) || 0,
-      diabetes: parseInt(row.diabetes) || 0,
-      stroke: parseInt(row.stroke) || 0,
-    };
+  const processed = rawData.map((row, index) => {
+    const cleanedRow = normalizeRow(row);
+    
+    // On the first row, let's check if we actually found any real data columns
+    if (index === 0) {
+      const keys = Object.keys(row).map(k => k.toLowerCase().trim());
+      essentialKeys.forEach(ek => {
+        if (keys.some(k => k.includes(ek) || ek.includes(k))) markersFoundCount++;
+      });
+    }
+
     const resultObj = calculateLifespan(cleanedRow);
     cleanedRow.lifespan = resultObj.prediction;
     
@@ -160,6 +193,11 @@ export function processHealthData(rawData) {
     
     return cleanedRow;
   });
+
+  // If we found fewer than 2 essential health columns, the file is likely invalid for this app
+  if (markersFoundCount < 2) {
+    throw new Error("Unsupported Dataset: We couldn't find enough health markers (like Age, BMI, or Smoking) in this file. Please check your column headers.");
+  }
 
   const totalRecords = processed.length;
   const avgAge = processed.reduce((acc, row) => acc + row.age, 0) / totalRecords;

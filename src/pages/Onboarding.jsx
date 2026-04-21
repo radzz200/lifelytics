@@ -5,13 +5,13 @@ import { Send, User, Bot, Loader2 } from 'lucide-react';
 import { useUser } from '../context/UserContext';
 
 const CHAT_QUESTIONS = [
-  { key: 'age', text: "Welcome to LifeLytics AI. To begin your assessment, what is your age?", type: 'number', placeholder: 'e.g. 35' },
+  { key: 'age', text: "Welcome to LifeLytics AI. To begin your assessment, what is your age?", type: 'number', placeholder: 'e.g. 35', min: 18, max: 120 },
   { key: 'gender', text: "What is your biological gender?", type: 'select', options: [{label: 'Male', value: 'male'}, {label: 'Female', value: 'female'}] },
-  { key: 'height', text: "What is your height in centimeters?", type: 'number', placeholder: 'e.g. 175' },
-  { key: 'weight', text: "What is your weight in kilograms?", type: 'number', placeholder: 'e.g. 70' },
-  { key: 'blood_pressure', text: "What is your typical systolic blood pressure? (If unsure, enter 120)", type: 'number', placeholder: 'e.g. 120' },
-  { key: 'cholesterol', text: "What is your total cholesterol level? (If unsure, enter 180)", type: 'number', placeholder: 'e.g. 180' },
-  { key: 'glucose', text: "What is your fasting glucose level? (If unsure, enter 90)", type: 'number', placeholder: 'e.g. 90' },
+  { key: 'height', text: "What is your height in centimeters?", type: 'number', placeholder: 'e.g. 175', min: 50, max: 250 },
+  { key: 'weight', text: "What is your weight in kilograms?", type: 'number', placeholder: 'e.g. 70', min: 20, max: 300 },
+  { key: 'blood_pressure', text: "What is your typical systolic blood pressure? (If unsure, enter 120)", type: 'number', placeholder: 'e.g. 120', min: 70, max: 250 },
+  { key: 'cholesterol', text: "What is your total cholesterol level? (If unsure, enter 180)", type: 'number', placeholder: 'e.g. 180', min: 100, max: 500 },
+  { key: 'glucose', text: "What is your fasting glucose level? (If unsure, enter 90)", type: 'number', placeholder: 'e.g. 90', min: 40, max: 400 },
   { key: 'exercise_level', text: "How often do you exercise?", type: 'select', options: [{label: 'Sedentary (No exercise)', value: '0'}, {label: 'Light (1-2x/wk)', value: '1'}, {label: 'Moderate (3-4x/wk)', value: '2'}, {label: 'High (5+x/wk)', value: '3'}] },
   { key: 'smoking', text: "Do you currently smoke?", type: 'boolean' },
   { key: 'alcohol', text: "Do you regularly consume alcohol?", type: 'boolean' },
@@ -50,6 +50,25 @@ export default function Onboarding() {
   const handleNextQuestion = (value, displayValue) => {
     const currentQ = CHAT_QUESTIONS[currentQuestionIndex];
     
+    // Validation Logic
+    if (currentQ.type === 'number') {
+      const num = parseFloat(value);
+      if (isNaN(num)) {
+        setMessages(prev => [...prev, { sender: 'user', text: displayValue }, { sender: 'bot', text: "Please enter a valid number." }]);
+        setInputValue('');
+        return;
+      }
+      if ((currentQ.min !== undefined && num < currentQ.min) || (currentQ.max !== undefined && num > currentQ.max)) {
+        setMessages(prev => [
+          ...prev, 
+          { sender: 'user', text: displayValue }, 
+          { sender: 'bot', text: `That value seems out of range. Please enter a value between ${currentQ.min} and ${currentQ.max}.` }
+        ]);
+        setInputValue('');
+        return;
+      }
+    }
+
     // Add user message
     setMessages(prev => [...prev, { sender: 'user', text: displayValue }]);
     

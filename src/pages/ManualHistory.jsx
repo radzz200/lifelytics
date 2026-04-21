@@ -31,10 +31,13 @@ export default function ManualHistory() {
         }
         
         if (data) {
-          const formattedData = data.map(row => ({
-            ...row,
-            userData: row.userdata || {}
-          }));
+          const formattedData = data.map(row => {
+            const defaultUser = { age: 'N/A', gender: 'N/A', bmi: 25, exercise_level: 0, smoking: 0, alcohol: 0, weight: null, height: null, blood_pressure: null, cholesterol: null };
+            return {
+              ...row,
+              userData: { ...defaultUser, ...(row.userdata || {}) }
+            };
+          });
           setHistory(formattedData);
         }
       } catch (err) {
