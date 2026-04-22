@@ -50,16 +50,16 @@ export default function ActionPlan() {
 
       <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
         <div>
-          <h2 className="text-4xl font-display font-bold mb-2 text-white">Your 12-Week Protocol</h2>
-          <p className="text-gray-400">Personalised habit roadmap based on your top modifiable risks.</p>
+          <h2 className="text-4xl font-display font-bold mb-2 text-text-light dark:text-white">Your 12-Week Protocol</h2>
+          <p className="text-text-light/70 dark:text-gray-400">Personalised habit roadmap based on your top modifiable risks.</p>
         </div>
         
         <div className="glass-panel p-4 flex items-center gap-6 min-w-[200px]">
           <div>
-            <div className="text-sm text-gray-400">Progress</div>
+            <div className="text-sm text-text-light/60 dark:text-gray-400">Progress</div>
             <div className="text-2xl font-bold text-teal">{completionPercentage}%</div>
           </div>
-          <div className="flex-1 h-2 bg-surface rounded-full overflow-hidden">
+          <div className="flex-1 h-2 bg-surface-light dark:bg-surface-dark rounded-full overflow-hidden">
             <motion.div 
               initial={{ width: 0 }} 
               animate={{ width: `${completionPercentage}%` }} 
@@ -69,17 +69,17 @@ export default function ActionPlan() {
         </div>
       </div>
 
-      <div className="space-y-8 relative before:absolute before:inset-0 before:ml-[1.2rem] before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-teal/50 before:via-border before:to-transparent">
+      <div className="space-y-8 relative before:absolute before:inset-0 before:ml-[1.2rem] before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-teal/50 before:via-border-light dark:before:via-border-dark before:to-transparent">
         {Object.entries(plan).map(([weekSpan, details], index) => (
           <div key={weekSpan} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
             
-            <div className="flex items-center justify-center w-10 h-10 rounded-full border-4 border-navy bg-teal text-navy font-bold shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 shadow-[0_0_0_4px_rgba(0,245,212,0.2)]">
+            <div className="flex items-center justify-center w-10 h-10 rounded-full border-4 border-background-light dark:border-background-dark bg-teal text-background-dark font-bold shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 shadow-[0_0_0_4px_rgba(0,245,212,0.2)]">
               {index + 1}
             </div>
             
             <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] glass-panel p-6">
               <h3 className="text-teal font-bold mb-1">{weekSpan}</h3>
-              <h4 className="text-xl font-semibold text-white mb-4">{details.title}</h4>
+              <h4 className="text-xl font-semibold text-text-light dark:text-white mb-4">{details.title}</h4>
               
               <ul className="space-y-3">
                 {details.tasks.map(task => (
@@ -91,7 +91,7 @@ export default function ActionPlan() {
                         <Circle className="w-5 h-5 text-gray-500 group-hover/task:text-teal transition-colors" />
                       )}
                     </div>
-                    <span className={`text-sm leading-relaxed ${progress[task.id] ? 'text-gray-500 line-through' : 'text-gray-300'}`}>
+                    <span className={`text-sm leading-relaxed ${progress[task.id] ? 'text-gray-500 line-through' : 'text-text-light/70 dark:text-gray-300'}`}>
                       {task.text}
                     </span>
                   </li>

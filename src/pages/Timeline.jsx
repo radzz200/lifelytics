@@ -4,8 +4,11 @@ import { useUser } from '../context/UserContext';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { ArrowLeft } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useTheme } from '../context/ThemeContext';
 
 export default function Timeline() {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   const navigate = useNavigate();
   const { userData, predictions } = useUser();
   const [chartData, setChartData] = useState([]);
@@ -63,18 +66,22 @@ export default function Timeline() {
       </button>
 
       <div className="glass-panel p-8">
-        <h2 className="text-3xl font-display font-bold mb-2">10-Year Health Trajectory</h2>
-        <p className="text-gray-400 mb-8">Projection of your LifeScore based on actuarial aging models and current risk factors.</p>
+        <h2 className="text-3xl font-display font-bold mb-2 text-text-light dark:text-white">10-Year Health Trajectory</h2>
+        <p className="text-text-light/70 dark:text-gray-400 mb-8">Projection of your LifeScore based on actuarial aging models and current risk factors.</p>
         
         <div className="h-[400px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#374151" vertical={false} />
-              <XAxis dataKey="year" stroke="#9CA3AF" tick={{fill: '#9CA3AF'}} tickMargin={10} />
-              <YAxis domain={[0, 100]} stroke="#9CA3AF" tick={{fill: '#9CA3AF'}} label={{ value: 'Health Score', angle: -90, position: 'insideLeft', fill: '#9CA3AF' }} />
+              <CartesianGrid strokeDasharray="3 3" stroke={isDark ? "#374151" : "#E2E8F0"} vertical={false} />
+              <XAxis dataKey="year" stroke={isDark ? "#9CA3AF" : "#64748B"} tick={{fill: isDark ? '#9CA3AF' : '#64748B'}} tickMargin={10} />
+              <YAxis domain={[0, 100]} stroke={isDark ? "#9CA3AF" : "#64748B"} tick={{fill: isDark ? '#9CA3AF' : '#64748B'}} label={{ value: 'Health Score', angle: -90, position: 'insideLeft', fill: isDark ? '#9CA3AF' : '#64748B' }} />
               <Tooltip 
-                contentStyle={{ backgroundColor: '#111827', borderColor: '#374151', color: '#fff' }}
-                itemStyle={{ color: '#fff' }}
+                contentStyle={{ 
+                  backgroundColor: isDark ? '#111827' : '#FFFFFF', 
+                  borderColor: isDark ? '#374151' : '#E2E8F0',
+                  color: isDark ? '#F1F5F9' : '#0F172A'
+                }}
+                itemStyle={{ color: isDark ? '#F1F5F9' : '#0F172A' }}
                 labelFormatter={(label, payload) => payload && payload[0] ? `${label} (Age ${payload[0].payload.age})` : label}
               />
               <Legend wrapperStyle={{ paddingTop: '20px' }} />
@@ -88,15 +95,15 @@ export default function Timeline() {
         <div className="mt-8 grid md:grid-cols-3 gap-6">
           <div className="bg-amber/10 border border-amber/20 p-4 rounded-xl">
             <h4 className="font-semibold text-amber mb-2">Current Trajectory</h4>
-            <p className="text-sm text-gray-300">If you maintain current habits, your score will steadily decline, reaching {chartData[10]?.['Current Path']} by age {chartData[10]?.age}.</p>
+            <p className="text-sm text-text-light/70 dark:text-gray-300">If you maintain current habits, your score will steadily decline, reaching {chartData[10]?.['Current Path']} by age {chartData[10]?.age}.</p>
           </div>
           <div className="bg-teal/10 border border-teal/20 p-4 rounded-xl">
             <h4 className="font-semibold text-teal mb-2">Potential Improvement</h4>
-            <p className="text-sm text-gray-300">Adopting the action plan will stabilize your score around {chartData[10]?.['Improved Path']} in 10 years.</p>
+            <p className="text-sm text-text-light/70 dark:text-gray-300">Adopting the action plan will stabilize your score around {chartData[10]?.['Improved Path']} in 10 years.</p>
           </div>
           <div className="bg-blue-500/10 border border-blue-500/20 p-4 rounded-xl">
             <h4 className="font-semibold text-blue-400 mb-2">Milestone Warning</h4>
-            <p className="text-sm text-gray-300">Heart disease and hypertension risks increase significantly after age {parseFloat(userData.age) + 6} on the current path.</p>
+            <p className="text-sm text-text-light/70 dark:text-gray-300">Heart disease and hypertension risks increase significantly after age {parseFloat(userData.age) + 6} on the current path.</p>
           </div>
         </div>
       </div>

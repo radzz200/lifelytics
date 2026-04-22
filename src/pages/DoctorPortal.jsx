@@ -7,8 +7,12 @@ import { ArrowLeft, BrainCircuit, Activity, HeartPulse, Filter } from 'lucide-re
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { processHealthData } from '../ml/healthPredictEngine';
+import { useTheme } from '../context/ThemeContext';
+import { incrementGlobalCounter } from '../utils/stats';
 
 export default function DoctorPortal() {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   const navigate = useNavigate();
   const [rawData, setRawData] = useState(null);
   const [data, setData] = useState(null);
@@ -33,6 +37,11 @@ export default function DoctorPortal() {
         setRawData(json);
         const result = processHealthData(json);
         setData(result);
+        
+        // Increment persistent global counter by number of people in cohort
+        if (json && json.length > 0) {
+          incrementGlobalCounter(json.length);
+        }
       } catch (err) {
         console.error(err);
         setError(err.message || "Failed to analyze cohort data.");
@@ -139,13 +148,13 @@ export default function DoctorPortal() {
   };
 
   const renderFilterPanel = () => (
-    <div className="bg-surface/80 p-4 rounded-xl border border-border/50 flex flex-wrap gap-4 items-end mb-8">
+    <div className="bg-surface-light dark:bg-surface-dark/80 p-4 rounded-xl border border-border-light/20 dark:border-border-dark/20 flex flex-wrap gap-4 items-end mb-8">
       <div>
         <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Age Group</label>
         <select 
           value={ageFilter} 
           onChange={(e) => setAgeFilter(e.target.value)}
-          className="bg-navy border border-border rounded-lg px-4 py-2 text-sm text-white focus:outline-none focus:border-teal"
+          className="bg-surface-light dark:bg-background-dark border border-border-light/20 dark:border-border-dark/20 rounded-lg px-4 py-2 text-sm text-text-light dark:text-text-dark focus:outline-none focus:border-teal"
         >
           <option value="All">All Ages</option>
           <option value="18-30">18 - 30</option>
@@ -160,7 +169,7 @@ export default function DoctorPortal() {
         <select 
           value={genderFilter} 
           onChange={(e) => setGenderFilter(e.target.value)}
-          className="bg-navy border border-border rounded-lg px-4 py-2 text-sm text-white focus:outline-none focus:border-teal"
+          className="bg-surface-light dark:bg-background-dark border border-border-light/20 dark:border-border-dark/20 rounded-lg px-4 py-2 text-sm text-text-light dark:text-text-dark focus:outline-none focus:border-teal"
         >
           <option value="All">All Genders</option>
           <option value="Male">Male</option>
@@ -173,7 +182,7 @@ export default function DoctorPortal() {
         <select 
           value={diseaseFilter} 
           onChange={(e) => setDiseaseFilter(e.target.value)}
-          className="bg-navy border border-border rounded-lg px-4 py-2 text-sm text-white focus:outline-none focus:border-teal"
+          className="bg-surface-light dark:bg-background-dark border border-border-light/20 dark:border-border-dark/20 rounded-lg px-4 py-2 text-sm text-text-light dark:text-text-dark focus:outline-none focus:border-teal"
         >
           <option value="All">Any / None</option>
           <option value="Heart Disease">Heart Disease</option>
@@ -194,32 +203,39 @@ export default function DoctorPortal() {
   const renderTab1 = () => (
     <div className="space-y-8 animate-in fade-in duration-500">
       <div className="grid md:grid-cols-4 gap-6">
-        <div className="glass-panel p-6 bg-gradient-to-br from-surface to-surface/50 border-teal/20 text-center">
+        <div className="glass-panel p-6 bg-gradient-to-br from-surface-light to-surface-light/50 dark:from-surface-dark dark:to-surface-dark/50 border-teal/20 text-center">
           <div className="text-xs font-bold text-teal uppercase tracking-widest mb-2">Total Records</div>
-          <div className="text-4xl font-bold font-mono text-white">{data.overview.totalRecords}</div>
+          <div className="text-4xl font-bold font-mono text-text-light dark:text-white">{data.overview.totalRecords}</div>
         </div>
-        <div className="glass-panel p-6 bg-gradient-to-br from-surface to-surface/50 border-blue-500/20 text-center">
+        <div className="glass-panel p-6 bg-gradient-to-br from-surface-light to-surface-light/50 dark:from-surface-dark dark:to-surface-dark/50 border-blue-500/20 text-center">
           <div className="text-xs font-bold text-blue-400 uppercase tracking-widest mb-2">Average Age</div>
-          <div className="text-4xl font-bold font-mono text-white">{data.overview.avgAge}</div>
+          <div className="text-4xl font-bold font-mono text-text-light dark:text-white">{data.overview.avgAge}</div>
         </div>
-        <div className="glass-panel p-6 bg-gradient-to-br from-surface to-surface/50 border-amber-500/20 text-center">
+        <div className="glass-panel p-6 bg-gradient-to-br from-surface-light to-surface-light/50 dark:from-surface-dark dark:to-surface-dark/50 border-amber-500/20 text-center">
           <div className="text-xs font-bold text-amber-400 uppercase tracking-widest mb-2">Average BMI</div>
-          <div className="text-4xl font-bold font-mono text-white">{data.overview.avgBmi}</div>
+          <div className="text-4xl font-bold font-mono text-text-light dark:text-white">{data.overview.avgBmi}</div>
         </div>
-        <div className="glass-panel p-6 bg-gradient-to-br from-surface to-surface/50 border-rose-500/20 text-center">
+        <div className="glass-panel p-6 bg-gradient-to-br from-surface-light to-surface-light/50 dark:from-surface-dark dark:to-surface-dark/50 border-rose-500/20 text-center">
           <div className="text-xs font-bold text-rose-400 uppercase tracking-widest mb-2">Heart Disease</div>
-          <div className="text-4xl font-bold font-mono text-white">{data.overview.heartDiseasePct}%</div>
+          <div className="text-4xl font-bold font-mono text-text-light dark:text-white">{data.overview.heartDiseasePct}%</div>
         </div>
       </div>
       
       <div className="glass-panel p-6">
-        <h3 className="text-xl font-bold mb-6 text-gray-200">Age Group Distribution</h3>
+        <h3 className="text-xl font-bold mb-6 text-text-light/80 dark:text-gray-200">Age Group Distribution</h3>
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={data.overview.ageDistribution} margin={{top: 20, right: 30, left: 20, bottom: 5}}>
-              <XAxis dataKey="name" stroke="#9CA3AF" />
-              <YAxis stroke="#9CA3AF" />
-              <RechartsTooltip contentStyle={{ backgroundColor: '#111827', borderColor: '#374151' }} cursor={{fill: '#1f2937'}} />
+              <XAxis dataKey="name" stroke={isDark ? "#9CA3AF" : "#64748B"} />
+              <YAxis stroke={isDark ? "#9CA3AF" : "#64748B"} />
+              <RechartsTooltip 
+                contentStyle={{ 
+                  backgroundColor: isDark ? '#111827' : '#FFFFFF', 
+                  borderColor: isDark ? '#1F2937' : '#CBD5E1',
+                  color: isDark ? '#F1F5F9' : '#000000'
+                }} 
+                cursor={{fill: isDark ? '#1F2937' : '#F1F5F9'}} 
+              />
               <Bar dataKey="value" fill="#00F5D4" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
@@ -234,38 +250,38 @@ export default function DoctorPortal() {
         <div key={idx} className="glass-panel p-6 flex flex-col md:flex-row gap-8">
           <div className="md:w-1/3">
             <h3 className="text-2xl font-bold text-teal mb-1">{group.group} Years</h3>
-            <p className="text-sm text-gray-400 mb-4">{group.count} people ({group.percent}% of dataset)</p>
+            <p className="text-sm text-text-light/60 dark:text-gray-400 mb-4">{group.count} people ({group.percent}% of dataset)</p>
             
             <div className="space-y-3">
-              <div className="flex justify-between border-b border-border/50 pb-2">
-                <span className="text-gray-300">Avg Lifespan</span>
-                <span className="font-bold text-white">{group.avgLifespan} yrs</span>
+              <div className="flex justify-between border-b border-border-light/20 dark:border-border-dark/20 pb-2">
+                <span className="text-text-light/70 dark:text-gray-300">Avg Lifespan</span>
+                <span className="font-bold text-text-light dark:text-white">{group.avgLifespan} yrs</span>
               </div>
               <div className="flex justify-between border-b border-border/50 pb-2">
-                <span className="text-gray-300">Smokers</span>
-                <span className="font-bold text-white">{group.smokersCount} ({group.smokersPct}%)</span>
+                <span className="text-text-light/70 dark:text-gray-300">Smokers</span>
+                <span className="font-bold text-text-light dark:text-white">{group.smokersCount} ({group.smokersPct}%)</span>
               </div>
               <div className="flex justify-between border-b border-border/50 pb-2">
-                <span className="text-gray-300">Drinkers</span>
-                <span className="font-bold text-white">{group.drinkersCount} ({group.drinkersPct}%)</span>
+                <span className="text-text-light/70 dark:text-gray-300">Drinkers</span>
+                <span className="font-bold text-text-light dark:text-white">{group.drinkersCount} ({group.drinkersPct}%)</span>
               </div>
               <div className="flex justify-between border-b border-border/50 pb-2">
-                <span className="text-gray-300">Regular Exercisers</span>
-                <span className="font-bold text-white">{group.exercisersCount} ({group.exercisersPct}%)</span>
+                <span className="text-text-light/70 dark:text-gray-300">Regular Exercisers</span>
+                <span className="font-bold text-text-light dark:text-white">{group.exercisersCount} ({group.exercisersPct}%)</span>
               </div>
               <div className="flex justify-between border-b border-border/50 pb-2">
-                <span className="text-gray-300">Heart Disease</span>
-                <span className="font-bold text-white">{group.hdCount} ({group.hdPct}%)</span>
+                <span className="text-text-light/70 dark:text-gray-300">Heart Disease</span>
+                <span className="font-bold text-text-light dark:text-white">{group.hdCount} ({group.hdPct}%)</span>
               </div>
               <div className="flex justify-between pb-2">
-                <span className="text-gray-300">Diabetes</span>
-                <span className="font-bold text-white">{group.diaCount} ({group.diaPct}%)</span>
+                <span className="text-text-light/70 dark:text-gray-300">Diabetes</span>
+                <span className="font-bold text-text-light dark:text-white">{group.diaCount} ({group.diaPct}%)</span>
               </div>
             </div>
           </div>
-          <div className="md:w-2/3 bg-surface/50 rounded-xl p-6 border border-border/30">
-            <h4 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-3">Health Summary</h4>
-            <div className="text-gray-200 leading-relaxed whitespace-pre-wrap mb-4">
+          <div className="md:w-2/3 bg-surface-light/50 dark:bg-surface-dark/50 rounded-xl p-6 border border-border-light/30 dark:border-border-dark/30">
+            <h4 className="text-sm font-bold text-text-light/60 dark:text-gray-400 uppercase tracking-widest mb-3">Health Summary</h4>
+            <div className="text-text-light/80 dark:text-gray-200 leading-relaxed whitespace-pre-wrap mb-4">
               {group.narrative}
             </div>
             {group.recommendation && (
@@ -287,7 +303,7 @@ export default function DoctorPortal() {
         return (
           <div key={idx} className={`glass-panel p-6 border-l-4 ${isHighRisk ? 'border-l-red-500' : isLowRisk ? 'border-l-teal' : 'border-l-amber-500'}`}>
             <div className="flex justify-between items-start mb-4">
-              <h3 className="text-xl font-semibold text-white">{combo.name}</h3>
+              <h3 className="text-xl font-semibold text-text-light dark:text-white">{combo.name}</h3>
               <div className="text-right">
                 <div className={`text-2xl font-bold font-mono ${isHighRisk ? 'text-red-400' : isLowRisk ? 'text-teal' : 'text-amber-400'}`}>
                   {combo.lifespan} years
@@ -297,8 +313,8 @@ export default function DoctorPortal() {
                 </div>
               </div>
             </div>
-            <div className="bg-surface/50 p-4 rounded-xl border border-border/30">
-              <p className="text-sm text-gray-300 leading-relaxed">
+            <div className="bg-surface-light/50 dark:bg-surface-dark/50 p-4 rounded-xl border border-border-light/20 dark:border-border-dark/20">
+              <p className="text-sm text-text-light/70 dark:text-gray-300 leading-relaxed">
                 <span className="text-gray-500 font-semibold mr-2">Factors:</span> 
                 {combo.factors}
               </p>
@@ -311,9 +327,9 @@ export default function DoctorPortal() {
 
   const renderTab4 = () => (
     <div className="space-y-8 animate-in fade-in duration-500">
-      <div className="glass-panel p-8 text-center bg-gradient-to-b from-surface to-surface/30">
-        <p className="text-lg text-gray-300 leading-relaxed max-w-3xl mx-auto">
-          This analysis covers <strong className="text-white">{data.summary.totalRecords}</strong> individuals across different age groups, lifestyle habits, and health conditions.
+      <div className="glass-panel p-8 text-center bg-gradient-to-b from-surface-light to-surface-light/30 dark:from-surface-dark dark:to-surface-dark/30">
+        <p className="text-lg text-text-light/70 dark:text-gray-300 leading-relaxed max-w-3xl mx-auto">
+          This analysis covers <strong className="text-text-light dark:text-white">{data.summary.totalRecords}</strong> individuals across different age groups, lifestyle habits, and health conditions.
           The overall average life expectancy for this dataset is <strong className="text-teal text-xl">{data.summary.avgLifespan}</strong> years.
         </p>
       </div>
@@ -330,7 +346,7 @@ export default function DoctorPortal() {
                   <span className="font-semibold text-gray-200">{idx + 1}. {risk.name}</span>
                   <span className="text-red-400 text-sm font-bold">~{risk.impact} years lost</span>
                 </div>
-                <span className="text-sm text-gray-400">Affects {risk.count} people ({risk.percent}%)</span>
+                <span className="text-sm text-text-light/60 dark:text-gray-400">Affects {risk.count} people ({risk.percent}%)</span>
               </div>
             ))}
           </div>
@@ -358,10 +374,10 @@ export default function DoctorPortal() {
       </div>
       
       <div className="glass-panel p-6">
-        <h3 className="text-xl font-bold text-white mb-4">Age Group Recommendations</h3>
+        <h3 className="text-xl font-bold text-text-light dark:text-white mb-4">Age Group Recommendations</h3>
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
           {data.ageGroups.map((g, i) => (
-             <div key={i} className="bg-surface/50 p-4 rounded-xl border border-border/50">
+             <div key={i} className="bg-surface-light/50 dark:bg-surface-dark/50 p-4 rounded-xl border border-border-light/20 dark:border-border-dark/20">
                <div className="text-teal font-bold mb-2">{g.group}</div>
                <div className="text-sm text-gray-300">{g.recommendation}</div>
              </div>
@@ -385,7 +401,7 @@ export default function DoctorPortal() {
           <h2 className="text-4xl font-display font-bold mb-4 text-center bg-clip-text text-transparent bg-gradient-to-r from-teal to-blue-500">
             LifeLytics Intelligence Engine
           </h2>
-          <p className="text-gray-400 text-center mb-8 text-lg">
+          <p className="text-text-light/60 dark:text-gray-400 text-center mb-8 text-lg">
             Upload a health dataset to run our deterministic Lifespan Prediction Algorithm. Processed securely in your browser with zero backend delays.
           </p>
           
@@ -406,7 +422,7 @@ export default function DoctorPortal() {
               <p className="text-teal font-medium text-xl">Drop the dataset here ...</p>
             ) : (
               <div>
-                <p className="text-gray-200 text-xl font-medium mb-2">Drag & drop your CSV or Excel file here</p>
+                <p className="text-text-light dark:text-gray-200 text-xl font-medium mb-2">Drag & drop your CSV or Excel file here</p>
                 <p className="text-gray-500">Must include: age, bmi, smoking, alcohol, exercise_level, heart_disease, etc.</p>
               </div>
             )}
@@ -460,8 +476,8 @@ export default function DoctorPortal() {
                     onClick={() => setActiveTab(tab.id)}
                     className={`px-6 py-3 rounded-xl text-sm font-bold tracking-wider transition-all whitespace-nowrap ${
                       activeTab === tab.id 
-                        ? 'bg-teal text-navy shadow-lg shadow-teal/20' 
-                        : 'bg-surface hover:bg-surface/80 text-gray-400'
+                        ? 'bg-teal text-background-dark shadow-lg shadow-teal/20' 
+                        : 'bg-surface-light dark:bg-surface-dark hover:bg-surface-light/80 dark:hover:bg-surface-dark/80 text-text-light/60 dark:text-gray-400'
                     }`}
                   >
                     {tab.label}

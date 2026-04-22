@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../context/UserContext';
+import { predictLifespan } from '../ml/predict';
 import { calculateLifespan } from '../ml/healthPredictEngine';
 import { supabase } from '../lib/supabase';
 import LifeScoreGauge from '../components/LifeScoreGauge';
@@ -8,8 +9,13 @@ import RiskRadar from '../components/RiskRadar';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { AlertTriangle, TrendingUp, Settings, Activity, Download, Apple, Dumbbell, Heart, ClipboardList, Shield } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useTheme } from '../context/ThemeContext';
+import { generateLongevityAudit } from '../utils/pdfGenerator';
+import { incrementGlobalCounter } from '../utils/stats';
 
 export default function Dashboard() {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   const navigate = useNavigate();
   const { userData, updateUserData, predictions, setPredictions } = useUser();
   const [loading, setLoading] = useState(true);
@@ -22,44 +28,41 @@ export default function Dashboard() {
     }
 
     const runPrediction = async () => {
-      // Wait briefly so loading animation displays smoothly
-      await new Promise(r => setTimeout(r, 600));
-      const result = calculateLifespan(userData);
-      
-      if (userData.isNewEntry && !hasSaved.current) {
-        hasSaved.current = true;
+      try {
+        await new Promise(r => setTimeout(r, 600));
+        const result = await predictLifespan(userData);
         
-        // Remove the flag so it doesn't get saved into the DB
-        const dataToSave = { ...userData };
-        delete dataToSave.isNewEntry;
+        if (userData.isNewEntry && !hasSaved.current) {
+          hasSaved.current = true;
+          const dataToSave = { ...userData };
+          delete dataToSave.isNewEntry;
 
-        const newEntry = {
-            id: Date.now().toString(),
-            date: new Date().toISOString(),
-            userdata: dataToSave,
-            prediction: result.prediction,
-            base: result.base,
-            score: Math.min(100, Math.max(0, (result.prediction / 100) * 100))
-        };
-        
-        try {
-          const { error } = await supabase
-            .from('patient_records')
-            .insert([newEntry]);
-            
-          if (error) {
-            console.error('Error saving to Supabase:', error);
+          const newEntry = {
+              id: Date.now().toString(),
+              date: new Date().toISOString(),
+              userdata: dataToSave,
+              prediction: result.prediction,
+              base: result.base,
+              score: Math.min(100, Math.max(0, (result.prediction / 100) * 100))
+          };
+          
+          try {
+            await supabase.from('patient_records').insert([newEntry]);
+            // Increment persistent global counter
+            await incrementGlobalCounter(1);
+          } catch (err) {
+            console.error('Supabase error:', err);
           }
-        } catch (err) {
-          console.error('Failed to save to Supabase:', err);
+          updateUserData({ isNewEntry: false });
         }
 
-        // Clear the flag from UserContext so reloads/loads don't duplicate
-        updateUserData({ isNewEntry: false });
+        setPredictions(result);
+        setLoading(false);
+      } catch (err) {
+        console.error('Prediction error:', err);
+        setLoading(false);
+        navigate('/onboarding');
       }
-
-      setPredictions(result);
-      setLoading(false);
     };
 
     if (!predictions) {
@@ -147,11 +150,12 @@ export default function Dashboard() {
   const routines = generateRoutines();
 
   const handleDownload = () => {
-    window.print();
+    generateLongevityAudit(userData, predictions, 'dashboard-content');
   };
 
   return (
     <motion.div 
+      id="dashboard-content"
       initial={{ opacity: 0 }} animate={{ opacity: 1 }}
       className="min-h-screen pt-24 pb-12 px-6 max-w-7xl mx-auto print:pt-8 print:px-0 print:bg-white print:text-black"
     >
@@ -161,10 +165,10 @@ export default function Dashboard() {
           <button onClick={() => navigate('/history')} className="btn-secondary flex items-center gap-2 py-2 text-sm bg-surface hover:bg-surface/80 border border-teal/50 text-teal">
             <ClipboardList className="w-4 h-4" /> Patient Records
           </button>
-          <button onClick={() => navigate('/science')} className="btn-secondary flex items-center gap-2 py-2 text-sm bg-surface hover:bg-surface/80 border border-blue-500/50 text-blue-400">
+          <button onClick={() => navigate('/science')} className="btn-secondary flex items-center gap-2 py-2 text-sm bg-surface-light dark:bg-surface-dark hover:bg-surface-light/80 border border-blue-500/50 text-blue-400">
             <Shield className="w-4 h-4" /> About Model
           </button>
-          <button onClick={handleDownload} className="btn-secondary flex items-center gap-2 py-2 text-sm bg-surface hover:bg-surface/80 border border-border">
+          <button onClick={handleDownload} className="btn-secondary flex items-center gap-2 py-2 text-sm bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark">
             <Download className="w-4 h-4" /> Download Report
           </button>
           <button onClick={() => navigate('/simulate')} className="btn-secondary flex items-center gap-2 py-2 text-sm">
@@ -181,31 +185,31 @@ export default function Dashboard() {
         <div className="lg:col-span-1 space-y-8">
           <div className="glass-panel p-6 flex flex-col items-center print:border-gray-200 print:shadow-none print:bg-gray-50">
             <LifeScoreGauge score={score} yearsPredicted={prediction} />
-            <div className={`mt-6 px-4 py-1 rounded-full border ${riskColor} bg-surface font-bold text-sm tracking-widest print:bg-white`}>
+            <div className={`mt-6 px-4 py-1 rounded-full border ${riskColor} bg-surface-light dark:bg-surface-dark font-bold text-sm tracking-widest print:bg-white`}>
               {riskLevel} RISK
             </div>
-            <p className="text-gray-400 text-sm mt-4 text-center print:text-gray-600">
+            <p className="text-gray-800 dark:text-gray-400 text-sm mt-4 text-center print:text-gray-600">
               Based on {predictions.modelUsed}
             </p>
           </div>
 
           <div className="glass-panel p-6 print:border-gray-200 print:shadow-none">
-            <h3 className="font-semibold mb-4 text-gray-300 print:text-gray-800">Quick Metrics</h3>
+            <h3 className="font-semibold mb-4 text-gray-800 dark:text-gray-300 print:text-gray-800">Quick Metrics</h3>
             <div className="space-y-4">
-              <div className="flex justify-between border-b border-border/50 pb-2 print:border-gray-300">
-                <span className="text-gray-400 print:text-gray-600">Current Age</span>
+              <div className="flex justify-between border-b border-border-light/50 dark:border-border-dark/50 pb-2 print:border-gray-300">
+                <span className="text-gray-800 dark:text-gray-400 print:text-gray-600">Current Age</span>
                 <span className="font-mono text-lg print:text-black">{currentAge}</span>
               </div>
-              <div className="flex justify-between border-b border-border/50 pb-2 print:border-gray-300">
-                <span className="text-gray-400 print:text-gray-600">Predicted Lifespan</span>
+              <div className="flex justify-between border-b border-border-light/50 dark:border-border-dark/50 pb-2 print:border-gray-300">
+                <span className="text-gray-800 dark:text-gray-400 print:text-gray-600">Predicted Lifespan</span>
                 <span className="font-mono text-lg text-teal print:text-teal-700">{prediction}</span>
               </div>
-              <div className="flex justify-between border-b border-border/50 pb-2 print:border-gray-300">
-                <span className="text-gray-400 print:text-gray-600">Expected Range</span>
+              <div className="flex justify-between border-b border-border-light/50 dark:border-border-dark/50 pb-2 print:border-gray-300">
+                <span className="text-gray-800 dark:text-gray-400 print:text-gray-600">Expected Range</span>
                 <span className="font-mono text-lg print:text-black">{Math.max(40, prediction - 4)} - {Math.min(100, prediction + 5)} yrs</span>
               </div>
               <div className="flex justify-between pb-2">
-                <span className="text-gray-400 print:text-gray-600">Estimated Years Left</span>
+                <span className="text-gray-800 dark:text-gray-400 print:text-gray-600">Estimated Years Left</span>
                 <span className="font-mono text-lg print:text-black">{yearsRemaining}</span>
               </div>
             </div>
@@ -218,19 +222,26 @@ export default function Dashboard() {
           <div className="grid md:grid-cols-2 gap-8 print:grid-cols-2 print:gap-4">
             {/* Radar Chart */}
             <div className="glass-panel p-6 print:border-gray-200 print:shadow-none">
-              <h3 className="font-semibold mb-4 text-gray-300 print:text-gray-800">Lifestyle Balance</h3>
+              <h3 className="font-semibold mb-4 text-gray-800 dark:text-gray-300 print:text-gray-800">Lifestyle Balance</h3>
               <RiskRadar data={adjustedRadarData} />
             </div>
 
             {/* Comparison Chart */}
             <div className="glass-panel p-6 flex flex-col justify-between print:border-gray-200 print:shadow-none">
-              <h3 className="font-semibold mb-4 text-gray-300 print:text-gray-800">Cohort Comparison</h3>
+              <h3 className="font-semibold mb-4 text-gray-800 dark:text-gray-300 print:text-gray-800">Cohort Comparison</h3>
               <div className="h-48">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={comparisonData} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                     <XAxis type="number" domain={[40, 100]} hide />
-                    <YAxis dataKey="name" type="category" stroke="#9CA3AF" axisLine={false} tickLine={false} />
-                    <Tooltip cursor={{ fill: '#1F2937' }} contentStyle={{ backgroundColor: '#111827', borderColor: '#374151' }} />
+                    <YAxis dataKey="name" type="category" stroke={isDark ? "#9CA3AF" : "#64748B"} axisLine={false} tickLine={false} />
+                    <Tooltip 
+                      cursor={{ fill: isDark ? '#1F2937' : '#F1F5F9' }} 
+                      contentStyle={{ 
+                        backgroundColor: isDark ? '#111827' : '#FFFFFF', 
+                        borderColor: isDark ? '#374151' : '#E2E8F0',
+                        color: isDark ? '#F1F5F9' : '#0F172A'
+                      }} 
+                    />
                     <Bar dataKey="val" radius={[0, 4, 4, 0]} barSize={20}>
                       {comparisonData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={index === 0 ? '#00F5D4' : index === 1 ? '#F5A623' : '#3B82F6'} />
@@ -244,12 +255,12 @@ export default function Dashboard() {
 
           {/* Explainable AI: Why this prediction? */}
           <div className="glass-panel p-6 print:border-gray-200 print:shadow-none">
-            <h3 className="font-semibold mb-2 text-gray-300 print:text-gray-800">Why this prediction? (Feature Contributions)</h3>
+            <h3 className="font-semibold mb-2 text-gray-800 dark:text-gray-300 print:text-gray-800">Why this prediction? (Feature Contributions)</h3>
             
             {/* Dynamic AI Narrative */}
-            <div className="bg-surface/50 p-4 rounded-xl border border-border/30 mb-6 print:bg-gray-50 print:border-gray-200">
-              <p className="text-sm leading-relaxed text-gray-300 print:text-gray-800">
-                <strong className="text-teal print:text-teal-700">AI Explanation:</strong> Your predicted {prediction < base ? 'lower' : 'higher'} lifespan of <strong className="text-white print:text-black">{prediction} years</strong> is primarily influenced by 
+            <div className="bg-surface-light/50 dark:bg-surface-dark/50 p-4 rounded-xl border border-border-light/20 dark:border-border-dark/20 mb-6 print:bg-gray-50 print:border-gray-200">
+              <p className="text-sm leading-relaxed text-gray-800 dark:text-gray-300 print:text-gray-800">
+                <strong className="text-teal print:text-teal-700">AI Explanation:</strong> Your predicted {prediction < base ? 'lower' : 'higher'} lifespan of <strong className="text-text-light dark:text-text-dark print:text-black">{prediction} years</strong> is primarily influenced by 
                 {topRisks.length > 0 
                   ? ` negative impacts from ${topRisks.map(r => r[0].replace('_', ' ')).join(', ')}` 
                   : ' protective lifestyle factors and a lack of significant chronic risks'}. 
@@ -259,17 +270,17 @@ export default function Dashboard() {
 
             <div className="grid md:grid-cols-3 gap-4">
               {topRisks.length > 0 ? topRisks.map(([factor, impact]) => (
-                <div key={factor} className="bg-surface border border-border/50 rounded-xl p-4 print:bg-white print:border-gray-300">
+                <div key={factor} className="bg-surface-light dark:bg-surface-dark border border-border-light/20 dark:border-border-dark/20 rounded-xl p-4 print:bg-white print:border-gray-300">
                   <div className="flex items-center gap-2 mb-2">
                     <AlertTriangle className="text-danger w-4 h-4 print:text-red-600" />
                     <span className="capitalize font-medium text-sm print:text-gray-800">{factor.replace('_', ' ')}</span>
                   </div>
                   <div className="text-xl font-bold font-mono text-danger print:text-red-600">
-                    reduces by {Math.abs(impact).toFixed(1)} <span className="text-xs text-gray-400 font-sans font-normal print:text-gray-500">yrs</span>
+                    reduces by {Math.abs(impact).toFixed(1)} <span className="text-xs text-gray-800 dark:text-gray-400 font-sans font-normal print:text-gray-500">yrs</span>
                   </div>
                 </div>
               )) : (
-                <div className="col-span-3 text-center text-gray-400 py-6 print:text-gray-600">
+                <div className="col-span-3 text-center text-gray-800 dark:text-gray-400 py-6 print:text-gray-600">
                   No major modifiable risks identified. Great job!
                 </div>
               )}
@@ -278,7 +289,7 @@ export default function Dashboard() {
 
           {/* Personalized Health Protocol */}
           <div className="glass-panel p-6 print:border-gray-200 print:shadow-none print:break-inside-avoid">
-            <h3 className="text-2xl font-display font-semibold mb-6 text-white print:text-black">Personalized Longevity Protocol</h3>
+            <h3 className="text-2xl font-display font-semibold mb-6 text-text-light dark:text-text-dark print:text-black">Personalized Longevity Protocol</h3>
             <div className="space-y-6">
               
               <div className="flex gap-4 items-start">

@@ -93,13 +93,13 @@ export default function Simulate() {
         {/* Left Column: Sliders */}
         <div className="glass-panel p-8">
           <h2 className="text-2xl font-display font-bold mb-6">Counterfactual Simulator</h2>
-          <p className="text-gray-400 mb-8 text-sm">Adjust the modifiable factors below to see how they impact your lifespan trajectory in real-time.</p>
+          <p className="text-text-light/70 dark:text-gray-400 mb-8 text-sm">Adjust the modifiable factors below to see how they impact your lifespan trajectory in real-time.</p>
 
           <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-4 custom-scrollbar">
             
             <div>
               <div className="flex justify-between mb-1 text-sm">
-                <label className="text-gray-300">Cigarettes / Day</label>
+                <label className="text-text-light/80 dark:text-gray-300">Cigarettes / Day</label>
                 <span className="font-mono text-teal">{sliders.cigarettes}</span>
               </div>
               <input type="range" name="cigarettes" min="0" max="40" step="1" value={sliders.cigarettes} onChange={handleSliderChange} className="w-full accent-teal" />
@@ -107,7 +107,7 @@ export default function Simulate() {
 
             <div>
               <div className="flex justify-between mb-1 text-sm">
-                <label className="text-gray-300">Alcohol Units / Week</label>
+                <label className="text-text-light/80 dark:text-gray-300">Alcohol Units / Week</label>
                 <span className="font-mono text-teal">{sliders.alcohol_units}</span>
               </div>
               <input type="range" name="alcohol_units" min="0" max="35" step="1" value={sliders.alcohol_units} onChange={handleSliderChange} className="w-full accent-teal" />
@@ -115,7 +115,7 @@ export default function Simulate() {
 
             <div>
               <div className="flex justify-between mb-1 text-sm">
-                <label className="text-gray-300">Exercise Days / Week</label>
+                <label className="text-text-light/80 dark:text-gray-300">Exercise Days / Week</label>
                 <span className="font-mono text-teal">{sliders.exercise_days}</span>
               </div>
               <input type="range" name="exercise_days" min="0" max="7" step="1" value={sliders.exercise_days} onChange={handleSliderChange} className="w-full accent-teal" />
@@ -123,7 +123,7 @@ export default function Simulate() {
 
             <div>
               <div className="flex justify-between mb-1 text-sm">
-                <label className="text-gray-300">Sleep Hours</label>
+                <label className="text-text-light/80 dark:text-gray-300">Sleep Hours</label>
                 <span className="font-mono text-teal">{sliders.sleep}</span>
               </div>
               <input type="range" name="sleep" min="4" max="10" step="0.5" value={sliders.sleep} onChange={handleSliderChange} className="w-full accent-teal" />
@@ -131,7 +131,7 @@ export default function Simulate() {
 
             <div>
               <div className="flex justify-between mb-1 text-sm">
-                <label className="text-gray-300">Stress Level (1-10)</label>
+                <label className="text-text-light/80 dark:text-gray-300">Stress Level (1-10)</label>
                 <span className="font-mono text-teal">{sliders.stress}</span>
               </div>
               <input type="range" name="stress" min="1" max="10" step="1" value={sliders.stress} onChange={handleSliderChange} className="w-full accent-teal" />
@@ -139,7 +139,7 @@ export default function Simulate() {
 
             <div>
               <div className="flex justify-between mb-1 text-sm">
-                <label className="text-gray-300">Fruit & Veg (Servings/day)</label>
+                <label className="text-text-light/80 dark:text-gray-300">Fruit & Veg (Servings/day)</label>
                 <span className="font-mono text-teal">{sliders.fruit_veg}</span>
               </div>
               <input type="range" name="fruit_veg" min="0" max="10" step="1" value={sliders.fruit_veg} onChange={handleSliderChange} className="w-full accent-teal" />
@@ -147,7 +147,7 @@ export default function Simulate() {
 
             <div>
               <div className="flex justify-between mb-1 text-sm">
-                <label className="text-gray-300">Water Intake (L/day)</label>
+                <label className="text-text-light/80 dark:text-gray-300">Water Intake (L/day)</label>
                 <span className="font-mono text-teal">{sliders.water}</span>
               </div>
               <input type="range" name="water" min="0" max="4" step="0.5" value={sliders.water} onChange={handleSliderChange} className="w-full accent-teal" />
@@ -155,7 +155,7 @@ export default function Simulate() {
 
             <div>
               <div className="flex justify-between mb-1 text-sm">
-                <label className="text-gray-300">Target BMI</label>
+                <label className="text-text-light/80 dark:text-gray-300">Target BMI</label>
                 <span className="font-mono text-teal">{sliders.bmi}</span>
               </div>
               <input type="range" name="bmi" min="15" max="45" step="0.1" value={sliders.bmi} onChange={handleSliderChange} className="w-full accent-teal" />
@@ -167,12 +167,12 @@ export default function Simulate() {
         {/* Right Column: Live Gauge */}
         <div className="flex flex-col space-y-8">
           <div className="glass-panel p-8 flex flex-col items-center justify-center flex-1">
-            <h3 className="text-lg font-semibold mb-8 text-gray-300">Simulated Trajectory</h3>
+            <h3 className="text-lg font-semibold mb-8 text-text-light/80 dark:text-gray-300">Simulated Trajectory</h3>
             <LifeScoreGauge score={score} yearsPredicted={simData.prediction} />
             
             <div className="mt-8 text-center space-y-2">
-              <div className="text-gray-400">Base Prediction: <span className="text-white font-mono">{basePrediction} years</span></div>
-              <div className="text-gray-400">With these changes: <span className="text-white font-mono">{simData.prediction.toFixed(1)} years</span></div>
+              <div className="text-text-light/70 dark:text-gray-400">Base Prediction: <span className="text-text-light dark:text-text-dark font-mono">{basePrediction} years</span></div>
+              <div className="text-text-light/70 dark:text-gray-400">With these changes: <span className="text-text-light dark:text-text-dark font-mono">{simData.prediction.toFixed(1)} years</span></div>
               
               <motion.div 
                 key={yearsGained}

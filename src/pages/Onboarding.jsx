@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Send, User, Bot, Loader2 } from 'lucide-react';
+import { Send, User, Bot, Loader2, Camera } from 'lucide-react';
 import { useUser } from '../context/UserContext';
+// import BioSelfieScan from '../components/BioSelfieScan';
 
 const CHAT_QUESTIONS = [
   { key: 'age', text: "Welcome to LifeLytics AI. To begin your assessment, what is your age?", type: 'number', placeholder: 'e.g. 35', min: 18, max: 120 },
@@ -27,20 +28,40 @@ export default function Onboarding() {
   const navigate = useNavigate();
   const { updateUserData } = useUser();
   
-  const [messages, setMessages] = useState([]);
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [formData, setFormData] = useState({});
+  const [messages, setMessages] = useState(() => {
+    const saved = localStorage.getItem('onboarding_messages');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(() => {
+    const saved = localStorage.getItem('onboarding_index');
+    return saved ? parseInt(saved) : 0;
+  });
+  const [formData, setFormData] = useState(() => {
+    const saved = localStorage.getItem('onboarding_form');
+    return saved ? JSON.parse(saved) : {};
+  });
   const [inputValue, setInputValue] = useState('');
-  const [isTyping, setIsTyping] = useState(true);
+  const [isTyping, setIsTyping] = useState(false);
+  const [showBioScan, setShowBioScan] = useState(false);
   const messagesEndRef = useRef(null);
 
-  // Initial greeting
+  // Initial greeting or resume
   useEffect(() => {
-    setTimeout(() => {
-      setMessages([{ sender: 'bot', text: CHAT_QUESTIONS[0].text }]);
-      setIsTyping(false);
-    }, 1000);
+    if (messages.length === 0) {
+      setIsTyping(true);
+      setTimeout(() => {
+        setMessages([{ sender: 'bot', text: CHAT_QUESTIONS[0].text }]);
+        setIsTyping(false);
+      }, 1000);
+    }
   }, []);
+
+  // Save progress
+  useEffect(() => {
+    localStorage.setItem('onboarding_messages', JSON.stringify(messages));
+    localStorage.setItem('onboarding_index', currentQuestionIndex.toString());
+    localStorage.setItem('onboarding_form', JSON.stringify(formData));
+  }, [messages, currentQuestionIndex, formData]);
 
   // Auto-scroll
   useEffect(() => {
@@ -81,6 +102,14 @@ export default function Onboarding() {
     const nextIndex = currentQuestionIndex + 1;
 
     setTimeout(() => {
+      /* 
+      // Trigger Bio Scan after weight is entered
+      if (currentQ.key === 'weight') {
+        setShowBioScan(true);
+        return;
+      }
+      */
+
       if (nextIndex < CHAT_QUESTIONS.length) {
         setMessages(prev => [...prev, { sender: 'bot', text: CHAT_QUESTIONS[nextIndex].text }]);
         setCurrentQuestionIndex(nextIndex);
@@ -100,12 +129,36 @@ export default function Onboarding() {
             isNewEntry: true // FLAG FOR DASHBOARD
           };
 
+          // Clear onboarding persistence
+          localStorage.removeItem('onboarding_messages');
+          localStorage.removeItem('onboarding_index');
+          localStorage.removeItem('onboarding_form');
+
           updateUserData(finalData);
           navigate('/dashboard');
         }, 2000);
       }
     }, 800);
   };
+
+  /*
+  const handleBioScanComplete = (estimatedAge) => {
+    setShowBioScan(false);
+    setMessages(prev => [...prev, { sender: 'bot', text: `AI analysis complete. Estimated biological age: ${estimatedAge}. I've refined your profile with this biomarker.` }]);
+    
+    // Save the bio age and continue
+    const newFormData = { ...formData, biological_age: estimatedAge };
+    setFormData(newFormData);
+    
+    setIsTyping(true);
+    const nextIndex = currentQuestionIndex + 1;
+    setTimeout(() => {
+      setMessages(prev => [...prev, { sender: 'bot', text: CHAT_QUESTIONS[nextIndex].text }]);
+      setCurrentQuestionIndex(nextIndex);
+      setIsTyping(false);
+    }, 1000);
+  };
+  */
 
   const handleInputSubmit = (e) => {
     e.preventDefault();
@@ -117,9 +170,27 @@ export default function Onboarding() {
 
   return (
     <div className="min-h-screen pt-24 pb-12 px-4 md:px-6 max-w-3xl mx-auto flex flex-col">
+      {/* 
+      {showBioScan && (
+        <BioSelfieScan 
+          onScanComplete={handleBioScanComplete} 
+          onCancel={() => {
+            setShowBioScan(false);
+            const nextIndex = currentQuestionIndex + 1;
+            setMessages(prev => [...prev, { sender: 'bot', text: "No problem, we'll continue with standard data collection." }]);
+            setIsTyping(true);
+            setTimeout(() => {
+              setMessages(prev => [...prev, { sender: 'bot', text: CHAT_QUESTIONS[nextIndex].text }]);
+              setCurrentQuestionIndex(nextIndex);
+              setIsTyping(false);
+            }, 1200);
+          }}
+        />
+      )}
+      */}
       <div className="text-center mb-6">
         <h1 className="text-2xl font-bold font-display">AI Health Assessment</h1>
-        <p className="text-gray-400 text-sm">Secure, conversational data collection</p>
+        <p className="text-gray-800 dark:text-gray-400 text-sm">Secure, conversational data collection</p>
       </div>
 
       <div className="flex-1 glass-panel flex flex-col overflow-hidden">
@@ -136,7 +207,7 @@ export default function Onboarding() {
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${msg.sender === 'user' ? 'bg-teal/20 text-teal' : 'bg-blue-500/20 text-blue-400'}`}>
                   {msg.sender === 'user' ? <User size={16} /> : <Bot size={16} />}
                 </div>
-                <div className={`max-w-[80%] rounded-2xl px-4 py-3 ${msg.sender === 'user' ? 'bg-teal text-navy rounded-tr-none' : 'bg-surface border border-border/50 rounded-tl-none text-gray-200'}`}>
+                <div className={`max-w-[80%] rounded-2xl px-4 py-3 ${msg.sender === 'user' ? 'bg-teal text-background-dark rounded-tr-none' : 'bg-surface-light dark:bg-surface-dark border border-border-light/50 dark:border-border-dark/50 rounded-tl-none text-text-light dark:text-gray-200'}`}>
                   {msg.text}
                 </div>
               </motion.div>
@@ -147,7 +218,7 @@ export default function Onboarding() {
                 <div className="w-8 h-8 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center flex-shrink-0">
                   <Bot size={16} />
                 </div>
-                <div className="bg-surface border border-border/50 rounded-2xl rounded-tl-none px-4 py-3 flex gap-1 items-center">
+                <div className="bg-surface-light dark:bg-surface-dark border border-border-light/50 dark:border-border-dark/50 rounded-2xl rounded-tl-none px-4 py-3 flex gap-1 items-center">
                   <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
                   <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                   <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
@@ -159,7 +230,7 @@ export default function Onboarding() {
         </div>
 
         {/* Input Area */}
-        <div className="p-4 border-t border-border/50 bg-surface/50">
+        <div className="p-4 border-t border-border-light dark:border-border-dark/50 bg-surface-light/50 dark:bg-surface-dark/50">
           {!isTyping && currentQ && currentQuestionIndex < CHAT_QUESTIONS.length && (
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
               
@@ -188,9 +259,11 @@ export default function Onboarding() {
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
                     placeholder={currentQ.placeholder}
-                    className="flex-1 bg-surface border border-border rounded-xl px-4 py-3 text-white focus:border-teal outline-none"
+                    min={currentQ.min}
+                    max={currentQ.max}
+                    className="flex-1 bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-xl px-4 py-3 text-text-light dark:text-text-dark focus:border-teal outline-none"
                   />
-                  <button type="submit" disabled={!inputValue.trim()} className="bg-teal text-navy p-3 rounded-xl hover:bg-teal/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+                  <button type="submit" disabled={!inputValue.trim()} className="bg-teal text-background-dark p-3 rounded-xl hover:bg-teal/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
                     <Send size={20} />
                   </button>
                 </form>

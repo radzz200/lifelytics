@@ -39,7 +39,7 @@ export default function LifeScoreGauge({ score, yearsPredicted }) {
       <svg height={radius * 2} width={radius * 2} className="transform -rotate-90">
         {/* Background Circle */}
         <circle
-          stroke="#1F2937"
+          className="stroke-border-light dark:stroke-border-dark"
           fill="transparent"
           strokeWidth={stroke}
           r={normalizedRadius}
@@ -67,9 +67,9 @@ export default function LifeScoreGauge({ score, yearsPredicted }) {
         <span className={`text-4xl font-bold font-display ${colorClass}`}>
           {Math.round(animatedScore)}
         </span>
-        <span className="text-sm text-gray-400">LifeScore</span>
-        <span className="text-lg font-semibold mt-2">{yearsPredicted}</span>
-        <span className="text-xs text-gray-500">Years Predicted</span>
+        <span className="text-sm text-text-light/60 dark:text-gray-400">LifeScore</span>
+        <span className="text-lg font-semibold mt-2 text-text-light dark:text-text-dark">{yearsPredicted}</span>
+        <span className="text-xs text-text-light/50 dark:text-gray-500">Years Predicted</span>
       </div>
     </div>
   );

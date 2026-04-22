@@ -1,14 +1,17 @@
 import React from 'react';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
+import { useTheme } from '../context/ThemeContext';
 
 export default function RiskRadar({ data }) {
-  // data format: [{ subject: 'Smoking', A: 120, B: 110, fullMark: 150 }]
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+
   return (
     <div className="w-full h-64">
       <ResponsiveContainer width="100%" height="100%">
         <RadarChart cx="50%" cy="50%" outerRadius="80%" data={data}>
-          <PolarGrid stroke="#374151" />
-          <PolarAngleAxis dataKey="subject" tick={{ fill: '#9CA3AF', fontSize: 12 }} />
+          <PolarGrid stroke={isDark ? "#374151" : "#E2E8F0"} />
+          <PolarAngleAxis dataKey="subject" tick={{ fill: isDark ? '#9CA3AF' : '#64748B', fontSize: 12 }} />
           <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
           
           {/* Ideal line */}

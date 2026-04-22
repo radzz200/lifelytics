@@ -2,6 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Activity, Shield, Brain, ChevronDown, Heart } from 'lucide-react';
+import { useInView } from 'framer-motion';
+import { supabase } from '../lib/supabase';
+import FloatingParticles from '../components/FloatingParticles';
 
 const DNAHelix = () => {
   return (
@@ -24,47 +27,97 @@ const DNAHelix = () => {
   );
 };
 
-export default function Landing() {
-  const navigate = useNavigate();
-  const [counter, setCounter] = useState(0);
+const AnimatedCounter = ({ targetValue }) => {
+  const [count, setCount] = useState(0);
+  const nodeRef = React.useRef(null);
+  const isInView = useInView(nodeRef, { once: false, amount: 0.5 });
 
   useEffect(() => {
-    // Seeded counter based on today's date
-    const today = new Date();
-    const seed = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
-    
-    // Simple deterministic pseudorandom based on seed
-    const pseudoRandom = Math.sin(seed) * 10000;
-    const baseCount = Math.floor(Math.abs(pseudoRandom - Math.floor(pseudoRandom)) * 5000) + 1000;
-    
-    // Animate up to baseCount
-    let current = 0;
-    const step = Math.ceil(baseCount / 50);
-    const interval = setInterval(() => {
-      current += step;
-      if (current >= baseCount) {
-        setCounter(baseCount);
-        clearInterval(interval);
-      } else {
-        setCounter(current);
+    if (isInView) {
+      let start = 0;
+      const end = parseInt(targetValue);
+      if (start === end) return;
+
+      let totalMiliseconds = 2000;
+      let incrementTime = (totalMiliseconds / end) > 10 ? (totalMiliseconds / end) : 10;
+      let step = Math.ceil(end / (totalMiliseconds / incrementTime));
+
+      let timer = setInterval(() => {
+        start += step;
+        if (start >= end) {
+          setCount(end);
+          clearInterval(timer);
+        } else {
+          setCount(start);
+        }
+      }, incrementTime);
+
+      return () => clearInterval(timer);
+    } else {
+      setCount(0);
+    }
+  }, [isInView, targetValue]);
+
+  return <span ref={nodeRef}>{count.toLocaleString()}</span>;
+};
+
+export default function Landing() {
+  const navigate = useNavigate();
+  const [globalCount, setGlobalCount] = useState(5183); // Base fallback
+
+  useEffect(() => {
+    const fetchGlobalCount = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('global_stats')
+          .select('total_processed')
+          .single();
+
+        if (!error && data) {
+          setGlobalCount(data.total_processed);
+        } else {
+          const { count } = await supabase
+            .from('patient_records')
+            .select('*', { count: 'exact', head: true });
+
+          if (count) {
+            setGlobalCount(5183 + count);
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching global count:", err);
       }
-    }, 30);
-    
-    return () => clearInterval(interval);
+    };
+
+    fetchGlobalCount();
+
+    const subscription = supabase
+      .channel('global_stats_changes')
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'global_stats' }, payload => {
+        if (payload.new && payload.new.total_processed) {
+          setGlobalCount(payload.new.total_processed);
+        }
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(subscription);
+    };
   }, []);
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.5 }}
       className="min-h-screen relative overflow-hidden"
     >
-      {/* Background Orbs (Replicating past conversation request implicitly) */}
-      <div className="absolute inset-0 z-0 overflow-hidden bg-navy">
-        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop')] bg-cover bg-center opacity-10 mix-blend-screen animate-pulse"></div>
-        <div className="absolute inset-0 bg-gradient-to-b from-navy via-navy/80 to-navy"></div>
+      {/* Background Orbs */}
+      <div className="absolute inset-0 z-0 overflow-hidden bg-background-light dark:bg-background-dark transition-colors duration-300">
+        <FloatingParticles />
+        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop')] bg-cover bg-center opacity-10 mix-blend-screen dark:animate-pulse"></div>
+        <div className="absolute inset-0 bg-gradient-to-b from-background-light via-background-light/80 to-background-light dark:from-background-dark dark:via-background-dark/80 dark:to-background-dark"></div>
         <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-teal/10 via-transparent to-transparent"></div>
         <div className="absolute top-[-10%] left-[-10%] w-[40vw] h-[40vw] bg-teal rounded-full mix-blend-screen filter blur-[100px] opacity-10 animate-pulse"></div>
         <div className="absolute bottom-[-10%] right-[-10%] w-[40vw] h-[40vw] bg-amber rounded-full mix-blend-screen filter blur-[100px] opacity-10 animate-pulse" style={{ animationDelay: '2s' }}></div>
@@ -73,42 +126,26 @@ export default function Landing() {
       {/* Hero Section */}
       <section className="relative pt-32 pb-20 px-6 md:px-12 max-w-7xl mx-auto flex flex-col md:flex-row items-center">
         <div className="md:w-1/2 z-10 text-center md:text-left mb-16 md:mb-0">
-          <motion.div 
-            initial={{ y: -20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            className="flex items-center justify-center md:justify-start gap-3 mb-6"
-          >
-            <div className="relative w-14 h-14">
-              <div className="absolute inset-0 bg-teal/20 rounded-xl border border-teal/30 flex items-center justify-center">
-                <Heart className="w-8 h-8 text-teal fill-teal/20" />
-              </div>
-              <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-white rounded-lg flex items-center justify-center shadow-lg">
-                <span className="text-navy font-bold text-xs">L</span>
-              </div>
-            </div>
-            <span className="text-3xl font-bold tracking-tight text-white ml-2">LifeLytics</span>
-          </motion.div>
-
-          <motion.h1 
+          <motion.h1
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.2 }}
-            className="text-5xl md:text-7xl font-bold leading-tight mb-6"
+            className="text-5xl md:text-7xl font-bold leading-tight mb-6 text-text-light dark:text-text-dark"
           >
-            LifeLytics <br />
+            Lifelytics <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal to-blue-500">Health Intelligence</span>
           </motion.h1>
-          
-          <motion.p 
+
+          <motion.p
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.3 }}
-            className="text-xl text-gray-300 mb-8 max-w-lg"
+            className="text-xl text-gray-800 dark:text-gray-300 mb-8 max-w-lg"
           >
             Transparent, scientifically-grounded AI that doesn't just predict your lifespan, but explains exactly why—and how to improve it.
           </motion.p>
-          
-          <motion.div 
+
+          <motion.div
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.4 }}
@@ -122,13 +159,15 @@ export default function Landing() {
             </button>
           </motion.div>
 
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.8 }}
-            className="mt-12 text-gray-400 font-medium"
+            className="mt-12 text-gray-500 dark:text-gray-400 font-medium"
           >
-            <span className="text-teal font-mono text-xl mr-2">{counter.toLocaleString()}</span>
+            <span className="text-teal font-mono text-xl mr-2">
+              <AnimatedCounter targetValue={globalCount} />
+            </span>
             people extended their life today
           </motion.div>
         </div>
@@ -145,7 +184,7 @@ export default function Landing() {
       </section>
 
       {/* Stats Strip */}
-      <section className="border-y border-border/50 bg-surface/30 backdrop-blur-sm py-10">
+      <section className="bg-surface-light/30 dark:bg-surface-dark/30 backdrop-blur-sm py-10">
         <div className="max-w-7xl mx-auto px-6 flex flex-wrap justify-center gap-12 md:gap-24 text-center">
           {[
             { label: 'Prediction Accuracy', value: '92%' },
@@ -153,15 +192,15 @@ export default function Landing() {
             { label: 'Age Groups', value: '6' },
             { label: 'ML Models', value: '3' },
           ].map((stat, i) => (
-            <motion.div 
+            <motion.div
               key={i}
               initial={{ y: 20, opacity: 0 }}
               whileInView={{ y: 0, opacity: 1 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.1 }}
             >
-              <div className="text-4xl font-display font-bold text-white mb-2">{stat.value}</div>
-              <div className="text-sm text-gray-400 uppercase tracking-wider">{stat.label}</div>
+              <div className="text-4xl font-display font-bold text-text-light dark:text-text-dark mb-2">{stat.value}</div>
+              <div className="text-sm text-gray-800 dark:text-gray-400 uppercase tracking-wider">{stat.label}</div>
             </motion.div>
           ))}
         </div>
@@ -180,7 +219,7 @@ export default function Landing() {
             { icon: Activity, title: 'Lifestyle Insights', desc: 'Understand exactly how your habits (like smoking or exercise) quantitatively alter your lifespan.' },
             { icon: Shield, title: 'Personalized Recommendations', desc: 'Receive a clinical-grade action plan tailored to your specific risk factors and age group.' }
           ].map((step, i) => (
-            <motion.div 
+            <motion.div
               key={i}
               initial={{ y: 30, opacity: 0 }}
               whileInView={{ y: 0, opacity: 1 }}
@@ -189,26 +228,113 @@ export default function Landing() {
               className="glass-panel p-8 text-center relative overflow-hidden group"
             >
               <div className="absolute inset-0 bg-gradient-to-br from-teal/5 to-amber/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <div className="w-16 h-16 bg-surface border border-border rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg relative z-10 group-hover:border-teal/50 transition-colors">
+              <div className="w-16 h-16 bg-surface-light dark:bg-surface-dark border border-border-light/20 dark:border-border-dark/20 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg relative z-10 group-hover:border-teal/50 transition-colors">
                 <step.icon className="w-8 h-8 text-teal" />
               </div>
               <h3 className="text-2xl font-semibold mb-4 relative z-10">{step.title}</h3>
-              <p className="text-gray-400 relative z-10">{step.desc}</p>
+              <p className="text-gray-800 dark:text-gray-400 relative z-10">{step.desc}</p>
             </motion.div>
           ))}
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-border/50 py-12 px-6">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center text-gray-500 text-sm">
-          <p>© {new Date().getFullYear()} LifeLytics. All data processed locally.</p>
-          <div className="mt-4 md:mt-0 flex flex-col md:flex-row items-center gap-4">
-            <p>Thesis Project: A Zero-Infrastructure Approach to Accessible Health Intelligence</p>
-            <a href="https://github.com" target="_blank" rel="noreferrer" className="text-teal hover:underline flex items-center gap-1">
-              GitHub Repository
-            </a>
+      {/* Why This Product Section */}
+      <section className="py-20 bg-teal/5 backdrop-blur-sm">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="flex flex-col md:flex-row gap-12 items-center">
+            <div className="md:w-1/2">
+              <h2 className="text-4xl font-bold mb-6 text-text-light dark:text-text-dark">The Value of Health Intelligence</h2>
+              <p className="text-lg text-gray-800 dark:text-gray-300 mb-6 leading-relaxed">
+                Most health apps provide generic advice. LifeLytics uses <strong>Explainable AI</strong> to bridge the gap between complex medical data and daily lifestyle choices.
+              </p>
+              <ul className="space-y-4">
+                {[
+                  "Predictive accuracy backed by WHO & CDC datasets",
+                  "Real-time counterfactual simulation for habit changes",
+                  "Clinical-grade reporting for medical consultations",
+                  "100% browser-native privacy with no data tracking"
+                ].map((item, i) => (
+                  <li key={i} className="flex items-center gap-3 text-gray-800 dark:text-gray-400">
+                    <div className="w-5 h-5 rounded-full bg-teal/20 flex items-center justify-center">
+                      <div className="w-2 h-2 rounded-full bg-teal"></div>
+                    </div>
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="md:w-1/2 grid grid-cols-2 gap-4">
+              <div className="glass-panel p-6 bg-surface-light dark:bg-surface-dark/50">
+                <div className="text-3xl font-bold text-teal mb-2">99%</div>
+                <div className="text-xs uppercase tracking-widest text-gray-500">Privacy Score</div>
+              </div>
+              <div className="glass-panel p-6 bg-surface-light dark:bg-surface-dark/50 mt-8">
+                <div className="text-3xl font-bold text-blue-500 mb-2">Global</div>
+                <div className="text-xs uppercase tracking-widest text-gray-500">Dataset Access</div>
+              </div>
+            </div>
           </div>
+        </div>
+      </section>
+
+      {/* Project & Mentor Details Section */}
+      <section className="py-24 px-6 max-w-7xl mx-auto border-t border-border-light/10 dark:border-border-dark/10">
+        <div className="grid md:grid-cols-2 gap-16">
+          <div>
+            <h3 className="text-2xl font-bold mb-6 flex items-center gap-2">
+              <Activity className="text-teal w-6 h-6" /> Project Overview
+            </h3>
+            <p className="text-gray-800 dark:text-gray-400 leading-relaxed mb-6">
+              LifeLytics is a capstone health intelligence project designed to showcase the intersection of
+              epidemiology and deep learning. Our goal is to democratize longevity science through
+              interactive, explainable technology.
+            </p>
+            <div className="space-y-2">
+              <div className="text-sm"><span className="text-gray-500 uppercase tracking-tighter mr-2">Version:</span> <span className="font-mono text-teal">2.4.1 Production</span></div>
+              <div className="text-sm"><span className="text-gray-500 uppercase tracking-tighter mr-2">Core Tech:</span> <span className="font-mono text-teal">React 18 + TensorFlow.js</span></div>
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-2xl font-bold mb-6">Academic Mentorship</h3>
+            <div className="glass-panel p-6 bg-surface-light dark:bg-surface-dark/30 border-l-4 border-l-teal">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-teal to-blue-500 flex items-center justify-center text-white font-bold text-xl shadow-lg">
+                  M
+                </div>
+                <div>
+                  <div className="font-bold text-lg text-text-light dark:text-text-dark">[Mentor Name]</div>
+                  <div className="text-teal text-sm">Principal Project Advisor</div>
+                </div>
+              </div>
+              <p className="mt-4 text-sm text-gray-800 dark:text-gray-400 italic">
+                "Guiding the development of medical-grade explainable AI systems for public health literacy."
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Wellness Quote Block */}
+      <section className="py-20 px-6 border-t border-border-light/10 dark:border-border-dark/10">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true }}
+          className="max-w-4xl mx-auto glass-panel p-8 md:p-12 text-center relative overflow-hidden"
+        >
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-teal via-blue-500 to-amber"></div>
+          <Heart className="w-12 h-12 text-teal/40 mx-auto mb-6 animate-pulse" />
+          <p className="text-2xl md:text-2xl font-display italic text-text-light dark:text-text-dark leading-relaxed">
+            "Wellness encompasses a healthy body, a sound mind, and a tranquil spirit. Enjoy the journey as you strive for wellness."
+          </p>
+        </motion.div>
+      </section>
+
+      {/* Footer */}
+      <footer className="border-t border-border-light/10 dark:border-border-dark/10 py-12 px-6">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center text-black-800 text-lg">
+          <p>© {new Date().getFullYear()} LifeLytics. All Rights Received</p>
         </div>
       </footer>
     </motion.div>

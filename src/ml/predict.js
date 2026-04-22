@@ -1,36 +1,30 @@
 import { calculateActuarialLifespan } from './actuarial';
-import * as tf from '@tensorflow/tfjs';
-
-let model = null;
+import { healthModel } from './model';
 
 export const loadModel = async () => {
-  try {
-    // For demo purposes, we catch the error gracefully if the model doesn't exist
-    model = await tf.loadLayersModel('/model/model.json');
-    console.log("TensorFlow.js model loaded successfully.");
-  } catch (error) {
-    console.warn("TensorFlow.js model not found at /model/model.json. Falling back to Actuarial Engine.");
-    model = null;
-  }
+  await healthModel.init();
 };
 
 export const predictLifespan = async (userData) => {
+  // Always get the actuarial baseline for modifiers and structure
   const actuarialResult = calculateActuarialLifespan(userData);
   
-  if (model) {
-    try {
-      // In a real scenario, map userData to the correct feature tensor
-      // This is a placeholder for the actual tensor creation
-      // const features = [userData.age, userData.bmi, ...];
-      // const tensor = tf.tensor2d([features]);
-      // const prediction = model.predict(tensor);
-      // const tfResult = prediction.dataSync()[0];
-      
-      // return { ...actuarialResult, prediction: tfResult, modelUsed: 'TensorFlow Neural Net' };
-    } catch (e) {
-      console.error("Inference error", e);
-    }
+  try {
+    // Run the Neural Model prediction
+    const neuralModifier = await healthModel.predict(userData);
+    
+    // Combine Actuarial baseline with Neural intelligence
+    // We'll use the Neural Model to "fine-tune" the result
+    // In this implementation, the neuralModifier is a direct addition to the baseline
+    const finalPrediction = Math.min(100, Math.max(userData.age + 1, actuarialResult.prediction + (neuralModifier / 10)));
+    
+    return { 
+      ...actuarialResult, 
+      prediction: parseFloat(finalPrediction.toFixed(1)),
+      modelUsed: 'Hybrid Neural-Actuarial Engine' 
+    };
+  } catch (e) {
+    console.error("Neural Inference error, falling back to Actuarial:", e);
+    return { ...actuarialResult, modelUsed: 'Actuarial Formula' };
   }
-  
-  return { ...actuarialResult, modelUsed: 'Actuarial Formula' };
 };

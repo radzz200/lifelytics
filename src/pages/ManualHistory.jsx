@@ -133,8 +133,8 @@ export default function ManualHistory() {
           <button onClick={() => navigate('/dashboard')} className="text-teal hover:underline flex items-center gap-2 mb-4">
             <ArrowLeft className="w-4 h-4" /> Back to Dashboard
           </button>
-          <h1 className="text-3xl font-display font-bold">Patient Records</h1>
-          <p className="text-gray-400 mt-2">Historical manual predictions and cohort entries.</p>
+          <h1 className="text-3xl font-display font-bold text-text-light dark:text-white">Patient Records</h1>
+          <p className="text-text-light/70 dark:text-gray-400 mt-2">Historical manual predictions and cohort entries.</p>
         </div>
 
         <div className="flex gap-4">
@@ -150,7 +150,7 @@ export default function ManualHistory() {
         </div>
       </div>
 
-      <div className="glass-panel overflow-hidden border border-border">
+      <div className="glass-panel overflow-hidden border border-border-light/20 dark:border-border-dark/20">
         {fetchError && (
           <div className="p-4 bg-danger/10 border-b border-danger/30 text-danger text-center">
             Database Connection Error: {fetchError}
@@ -165,7 +165,7 @@ export default function ManualHistory() {
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-surface/50 border-b border-border/50 text-xs uppercase tracking-wider text-gray-400">
+                <tr className="bg-surface-light/50 dark:bg-surface-dark/50 border-b border-border-light/20 dark:border-border-dark/20 text-xs uppercase tracking-wider text-text-light/60 dark:text-gray-400">
                   <th className="p-4 font-semibold">Date</th>
                   <th className="p-4 font-semibold">Demographics</th>
                   <th className="p-4 font-semibold">Vitals</th>
@@ -175,38 +175,38 @@ export default function ManualHistory() {
                   <th className="p-4 font-semibold text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border/30">
+              <tbody className="divide-y divide-border-light/30 dark:divide-border-dark/30">
                 {history.map((record) => {
                   const bmi = record.userData.weight && record.userData.height 
                     ? (record.userData.weight / Math.pow(record.userData.height/100, 2)).toFixed(1) 
                     : '--';
                   return (
-                    <tr key={record.id} className="hover:bg-surface/30 transition-colors">
-                      <td className="p-4 text-sm text-gray-300">
+                    <tr key={record.id} className="hover:bg-surface-light/30 dark:hover:bg-surface-dark/30 transition-colors">
+                      <td className="p-4 text-sm text-text-light/70 dark:text-gray-300">
                         {new Date(record.date).toLocaleDateString()} <br/>
-                        <span className="text-xs text-gray-500">{new Date(record.date).toLocaleTimeString()}</span>
+                        <span className="text-xs text-text-light/50 dark:text-gray-500">{new Date(record.date).toLocaleTimeString()}</span>
                       </td>
                       <td className="p-4">
-                        <div className="text-white font-medium capitalize">{record.userData.age} yrs, {record.userData.gender}</div>
-                        <div className="text-xs text-gray-400">BMI: {bmi}</div>
+                        <div className="text-text-light dark:text-white font-medium capitalize">{record.userData.age} yrs, {record.userData.gender}</div>
+                        <div className="text-xs text-text-light/60 dark:text-gray-400">BMI: {bmi}</div>
                       </td>
-                      <td className="p-4 text-sm text-gray-300">
+                      <td className="p-4 text-sm text-text-light/70 dark:text-gray-300">
                         BP: {record.userData.blood_pressure || '--'} <br/>
                         Chol: {record.userData.cholesterol || '--'}
                       </td>
-                      <td className="p-4 text-sm text-gray-300">
+                      <td className="p-4 text-sm text-text-light/70 dark:text-gray-300">
                         Ex Level: {record.userData.exercise_level} <br/>
                         Smoke: {record.userData.smoking === '1' ? 'Yes' : 'No'} | Alc: {record.userData.alcohol === '1' ? 'Yes' : 'No'}
                       </td>
                       <td className="p-4">
                         <span className="text-xl font-bold font-mono text-teal">{record.prediction}</span>
-                        <span className="text-xs text-gray-400 ml-1">yrs</span>
+                        <span className="text-xs text-text-light/60 dark:text-gray-400 ml-1">yrs</span>
                       </td>
                       <td className="p-4">
-                        <div className="w-full bg-surface rounded-full h-2 mb-1">
+                        <div className="w-full bg-surface-light dark:bg-surface-dark rounded-full h-2 mb-1">
                           <div className={`h-2 rounded-full ${record.score < 50 ? 'bg-danger' : record.score < 75 ? 'bg-amber' : 'bg-teal'}`} style={{ width: `${record.score}%` }}></div>
                         </div>
-                        <span className="text-xs text-gray-400">{record.score.toFixed(1)} / 100</span>
+                        <span className="text-xs text-text-light/60 dark:text-gray-400">{record.score.toFixed(1)} / 100</span>
                       </td>
                       <td className="p-4 text-right">
                         <div className="flex flex-col items-end gap-3">
