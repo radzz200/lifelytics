@@ -8,6 +8,11 @@ import { useUser } from '../context/UserContext';
 const CHAT_QUESTIONS = [
   { key: 'age', text: "Welcome to LifeLytics AI. To begin your assessment, what is your age?", type: 'number', placeholder: 'e.g. 35', min: 18, max: 120 },
   { key: 'gender', text: "What is your biological gender?", type: 'select', options: [{label: 'Male', value: 'male'}, {label: 'Female', value: 'female'}] },
+  { key: 'country', text: "What country do you live in? (Used for dietary and geographic baselines)", type: 'select', options: [
+    {label: 'United States', value: 'USA'}, {label: 'United Kingdom', value: 'UK'}, 
+    {label: 'India', value: 'India'}, {label: 'Canada', value: 'Canada'}, 
+    {label: 'Australia', value: 'Australia'}, {label: 'Other', value: 'Other'}
+  ]},
   { key: 'height', text: "What is your height in centimeters?", type: 'number', placeholder: 'e.g. 175', min: 50, max: 250 },
   { key: 'weight', text: "What is your weight in kilograms?", type: 'number', placeholder: 'e.g. 70', min: 20, max: 300 },
   { key: 'blood_pressure', text: "What is your typical systolic blood pressure? (If unsure, enter 120)", type: 'number', placeholder: 'e.g. 120', min: 70, max: 250 },
@@ -189,8 +194,8 @@ export default function Onboarding() {
       )}
       */}
       <div className="text-center mb-6">
-        <h1 className="text-2xl font-bold font-display">AI Health Assessment</h1>
-        <p className="text-gray-800 dark:text-gray-400 text-sm">Secure, conversational data collection</p>
+        <h1 className="text-4xl font-normal font-bebas tracking-[0.1em]">AI Health Assessment</h1>
+        <p className="text-gray-800 dark:text-gray-400 text-sm font-bold">Secure, conversational data collection</p>
       </div>
 
       <div className="flex-1 glass-panel flex flex-col overflow-hidden">
@@ -207,7 +212,7 @@ export default function Onboarding() {
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${msg.sender === 'user' ? 'bg-teal/20 text-teal' : 'bg-blue-500/20 text-blue-400'}`}>
                   {msg.sender === 'user' ? <User size={16} /> : <Bot size={16} />}
                 </div>
-                <div className={`max-w-[80%] rounded-2xl px-4 py-3 ${msg.sender === 'user' ? 'bg-teal text-background-dark rounded-tr-none' : 'bg-surface-light dark:bg-surface-dark border border-border-light/50 dark:border-border-dark/50 rounded-tl-none text-text-light dark:text-gray-200'}`}>
+                <div className={`max-w-[80%] rounded-2xl px-5 py-3 font-bebas tracking-wider ${msg.sender === 'user' ? 'bg-teal text-background-dark rounded-tr-none text-xl' : 'bg-surface-light dark:bg-surface-dark border border-border-light/50 dark:border-border-dark/50 rounded-tl-none text-text-light dark:text-gray-200 text-2xl'}`}>
                   {msg.text}
                 </div>
               </motion.div>

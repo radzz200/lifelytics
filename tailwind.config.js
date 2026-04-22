@@ -24,6 +24,7 @@ export default {
         text: {
           light: '#000000',
           dark: '#F1F5F9',
+          muted: '#475569', // Slate 600 - High contrast secondary
         },
         border: {
           light: '#CBD5E1',

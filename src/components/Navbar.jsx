@@ -21,7 +21,7 @@ const Navbar = () => {
         {location.pathname !== '/' && (
           <button 
             onClick={() => navigate('/')}
-            className="text-sm font-medium text-light-text/70 dark:text-gray-400 hover:text-teal transition-colors"
+            className="text-base font-black text-slate-900 dark:text-gray-200 hover:text-teal transition-colors uppercase tracking-wider"
           >
             Home
           </button>

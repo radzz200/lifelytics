@@ -1,5 +1,5 @@
 import { jsPDF } from 'jspdf';
-import html2canvas from 'html2canvas';
+import { generatePlan } from '../ml/recommend';
 
 export const generateLongevityAudit = async (userData, predictions, dashboardElementId) => {
   const doc = new jsPDF('p', 'mm', 'a4');
@@ -7,86 +7,132 @@ export const generateLongevityAudit = async (userData, predictions, dashboardEle
   const pageHeight = doc.internal.pageSize.getHeight();
   const margin = 20;
 
-  // Header Background
-  doc.setFillColor(15, 23, 42); // Navy
-  doc.rect(0, 0, pageWidth, 40, 'F');
+  // Header - Hospital Style
+  doc.setFillColor(255, 255, 255);
+  doc.rect(0, 0, pageWidth, pageHeight, 'F');
 
-  // Logo Placeholder
-  doc.setTextColor(0, 245, 212); // Teal
+  // Top Border Accent
+  doc.setFillColor(0, 168, 150); // Clinical Teal
+  doc.rect(0, 0, pageWidth, 5, 'F');
+
+  doc.setTextColor(30, 41, 59); // Slate 800
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(24);
-  doc.text('LIFELYTICS', margin, 25);
+  doc.setFontSize(22);
+  doc.text('LIFELYTICS CLINICAL REPORT', margin, 25);
   
   doc.setFontSize(10);
-  doc.setTextColor(255, 255, 255);
-  doc.text('AI-DRIVEN LONGEVITY AUDIT', margin, 32);
+  doc.setTextColor(100, 116, 139);
+  doc.text('DEPARTMENT OF LONGEVITY AND PREVENTATIVE MEDICINE', margin, 32);
 
-  // User Info Section
-  doc.setTextColor(15, 23, 42);
-  doc.setFontSize(16);
-  doc.text('Patient Health Profile', margin, 55);
-  
   doc.setDrawColor(226, 232, 240);
-  doc.line(margin, 58, pageWidth - margin, 58);
+  doc.setLineWidth(0.5);
+  doc.line(margin, 38, pageWidth - margin, 38);
 
+  // Patient Details Matrix
   doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(100, 116, 139);
+  doc.setTextColor(30, 41, 59);
   
-  const infoY = 68;
-  doc.text(`Age: ${userData.age}`, margin, infoY);
-  doc.text(`BMI: ${userData.bmi}`, margin + 40, infoY);
-  doc.text(`Gender: ${userData.gender}`, margin + 80, infoY);
-  doc.text(`Report Date: ${new Date().toLocaleDateString()}`, margin + 120, infoY);
+  const drawField = (label, value, x, y) => {
+    doc.setFont('helvetica', 'bold');
+    doc.text(label + ':', x, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text(String(value || 'N/A'), x + 30, y);
+  };
 
-  // Prediction Results
-  doc.setFillColor(248, 250, 252);
-  doc.roundedRect(margin, 80, pageWidth - (margin * 2), 50, 3, 3, 'F');
+  const currentAge = parseFloat(userData.age) || 30;
+
+  drawField('Patient ID', 'LX-' + Math.floor(Math.random() * 1000000), margin, 48);
+  drawField('Date', new Date().toLocaleDateString(), margin + 90, 48);
   
-  doc.setTextColor(15, 23, 42);
-  doc.setFontSize(12);
-  doc.text('Predicted Lifespan', margin + 10, 95);
+  drawField('Age', currentAge, margin, 56);
+  drawField('Gender', userData.gender || 'Not specified', margin + 90, 56);
   
-  doc.setFontSize(48);
-  doc.setTextColor(0, 245, 212);
-  doc.text(`${predictions.prediction}`, margin + 10, 115);
-  
+  drawField('Height (cm)', userData.height, margin, 64);
+  drawField('Weight (kg)', userData.weight, margin + 90, 64);
+
+  drawField('Region', userData.country || 'Not specified', margin, 72);
+  drawField('BMI', userData.bmi || 'N/A', margin + 90, 72);
+
+  doc.line(margin, 80, pageWidth - margin, 80);
+
+  // Core Findings
+  doc.setFont('helvetica', 'bold');
   doc.setFontSize(14);
-  doc.setTextColor(100, 116, 139);
-  doc.text('Years', margin + 35, 115);
+  doc.text('1. LONGEVITY PROGNOSIS', margin, 92);
 
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(margin, 98, pageWidth - (margin * 2), 35, 2, 2, 'F');
+
+  doc.setFontSize(11);
+  doc.text('Estimated Biological Age:', margin + 5, 108);
+  doc.setFontSize(16);
+  doc.setTextColor(userData.biological_age > currentAge ? 220 : 0, userData.biological_age > currentAge ? 38 : 168, userData.biological_age > currentAge ? 38 : 150);
+  doc.text(`${predictions.biologicalAge} years`, margin + 55, 108);
+
+  doc.setTextColor(30, 41, 59);
+  doc.setFontSize(11);
+  doc.text('Predicted Lifespan:', margin + 5, 120);
+  doc.setFontSize(16);
+  doc.text(`${predictions.prediction} years`, margin + 55, 120);
+
+  // Vital Biomarkers Table
+  doc.setFontSize(14);
+  doc.text('2. CLINICAL BIOMARKERS', margin, 148);
+
+  const startY = 155;
+  doc.setFillColor(241, 245, 249);
+  doc.rect(margin, startY, pageWidth - (margin * 2), 8, 'F');
+  
+  doc.setFontSize(9);
+  doc.text('MARKER', margin + 2, startY + 6);
+  doc.text('REPORTED VALUE', margin + 60, startY + 6);
+  doc.text('REFERENCE RANGE', margin + 120, startY + 6);
+
+  const markers = [
+    { name: 'Blood Pressure (Sys)', val: userData.blood_pressure, ref: '< 120 mmHg' },
+    { name: 'Total Cholesterol', val: userData.cholesterol, ref: '< 200 mg/dL' },
+    { name: 'Fasting Glucose', val: userData.glucose, ref: '< 100 mg/dL' },
+    { name: 'Exercise Frequency', val: userData.exercise_level + ' days/wk', ref: '>= 3 days/wk' }
+  ];
+
+  doc.setFont('helvetica', 'normal');
+  markers.forEach((m, i) => {
+    const y = startY + 15 + (i * 10);
+    doc.text(m.name, margin + 2, y);
+    doc.text(String(m.val || 'Not Tested'), margin + 60, y);
+    doc.text(m.ref, margin + 120, y);
+    doc.setDrawColor(241, 245, 249);
+    doc.line(margin, y + 3, pageWidth - margin, y + 3);
+  });
+
+  // Action Plan
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(14);
+  doc.text('3. PRESCRIBED ACTION PLAN', margin, 215);
+
+  const plan = generatePlan(predictions.featureImportance || {}, userData);
+  
+  let currentY = 225;
   doc.setFontSize(10);
-  doc.setTextColor(15, 23, 42);
-  doc.text(`Base: ${predictions.base} years`, margin + 100, 100);
-  doc.text(`Neural Modifier: ${predictions.totalModifier > 0 ? '+' : ''}${predictions.totalModifier}`, margin + 100, 110);
-  doc.text(`Engine: Hybrid Neural-Actuarial`, margin + 100, 120);
-
-  // Charts Section (Captured from DOM)
-  const dashboardElement = document.getElementById(dashboardElementId);
-  if (dashboardElement) {
-    try {
-      // We'll capture specific chart containers instead of the whole dashboard
-      const charts = dashboardElement.querySelectorAll('.glass-panel');
-      if (charts.length >= 2) {
-        const canvas1 = await html2canvas(charts[0], { scale: 2 });
-        const imgData1 = canvas1.toDataURL('image/png');
-        doc.addImage(imgData1, 'PNG', margin, 140, 80, 60);
-
-        const canvas2 = await html2canvas(charts[1], { scale: 2 });
-        const imgData2 = canvas2.toDataURL('image/png');
-        doc.addImage(imgData2, 'PNG', margin + 90, 140, 80, 60);
-      }
-    } catch (e) {
-      console.error("Chart capture failed", e);
-    }
-  }
+  Object.entries(plan).slice(0, 3).forEach(([section, details]) => {
+    doc.setFont('helvetica', 'bold');
+    doc.text(section.toUpperCase(), margin, currentY);
+    currentY += 6;
+    
+    doc.setFont('helvetica', 'normal');
+    details.tasks.slice(0, 2).forEach(task => {
+      doc.text('• ' + task.text, margin + 5, currentY);
+      currentY += 6;
+    });
+    currentY += 4;
+  });
 
   // Footer
   doc.setFontSize(8);
   doc.setTextColor(148, 163, 184);
-  const footerText = "CONFIDENTIAL: This report is generated by Lifelytics AI and is for informational purposes only. Consult a physician before making major lifestyle changes.";
+  const footerText = "CONFIDENTIAL: This report is generated by the LifeLytics AI Neural Engine. It is intended for educational and preventative analysis. It does not replace professional medical advice.";
   const splitFooter = doc.splitTextToSize(footerText, pageWidth - (margin * 2));
   doc.text(splitFooter, margin, pageHeight - 15);
 
-  doc.save(`Lifelytics_Audit_${new Date().toISOString().split('T')[0]}.pdf`);
+  doc.save(`Lifelytics_Clinical_Audit_${new Date().toISOString().split('T')[0]}.pdf`);
 };

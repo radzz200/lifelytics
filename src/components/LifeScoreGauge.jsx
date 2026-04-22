@@ -1,43 +1,49 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 
-export default function LifeScoreGauge({ score, yearsPredicted }) {
-  const [animatedScore, setAnimatedScore] = useState(0);
+export default function LifeScoreGauge({ biologicalAge, chronologicalAge, yearsPredicted }) {
+  const [animatedAge, setAnimatedAge] = useState(0);
 
   useEffect(() => {
     const duration = 1200; // 1.2s
     const steps = 60;
     const stepTime = duration / steps;
-    const increment = score / steps;
+    const increment = biologicalAge / steps;
     let current = 0;
 
     const timer = setInterval(() => {
       current += increment;
-      if (current >= score) {
-        setAnimatedScore(score);
+      if (current >= biologicalAge) {
+        setAnimatedAge(biologicalAge);
         clearInterval(timer);
       } else {
-        setAnimatedScore(current);
+        setAnimatedAge(current);
       }
     }, stepTime);
 
     return () => clearInterval(timer);
-  }, [score]);
+  }, [biologicalAge]);
 
   const radius = 100;
   const stroke = 20;
   const normalizedRadius = radius - stroke * 2;
   const circumference = normalizedRadius * 2 * Math.PI;
-  const strokeDashoffset = circumference - (animatedScore / 100) * circumference;
+  
+  // Fill logic: max age scale = 100. If 65, fill 65%. 
+  const fillPercentage = Math.min(100, Math.max(0, animatedAge));
+  const strokeDashoffset = circumference - (fillPercentage / 100) * circumference;
 
-  let colorClass = 'text-danger';
-  if (animatedScore > 40) colorClass = 'text-amber';
-  if (animatedScore > 70) colorClass = 'text-teal';
+  // Color logic based on Bio Age vs Chrono Age
+  let colorClass = 'text-teal'; // Safe: Bio < Chrono
+  if (animatedAge >= chronologicalAge + 2) {
+    colorClass = 'text-danger'; // Danger: Bio significantly > Chrono
+  } else if (animatedAge >= chronologicalAge) {
+    colorClass = 'text-amber'; // Normal/Warning: Bio slightly > Chrono or Equal
+  }
 
   return (
     <div className="flex flex-col items-center justify-center relative w-64 h-64 mx-auto">
       <svg height={radius * 2} width={radius * 2} className="transform -rotate-90">
-        {/* Background Circle */}
         <circle
           className="stroke-border-light dark:stroke-border-dark"
           fill="transparent"
@@ -46,7 +52,6 @@ export default function LifeScoreGauge({ score, yearsPredicted }) {
           cx={radius}
           cy={radius}
         />
-        {/* Progress Circle */}
         <motion.circle
           stroke="currentColor"
           fill="transparent"
@@ -65,10 +70,12 @@ export default function LifeScoreGauge({ score, yearsPredicted }) {
       </svg>
       <div className="absolute flex flex-col items-center justify-center">
         <span className={`text-4xl font-bold font-display ${colorClass}`}>
-          {Math.round(animatedScore)}
+          {animatedAge.toFixed(1)}
         </span>
-        <span className="text-sm text-text-light/60 dark:text-gray-400">LifeScore</span>
-        <span className="text-lg font-semibold mt-2 text-text-light dark:text-text-dark">{yearsPredicted}</span>
+        <span className="text-sm text-text-light/60 dark:text-gray-400">Bio Age</span>
+        <span className="text-lg font-semibold mt-2 text-text-light dark:text-text-dark">
+          {typeof yearsPredicted === 'number' ? yearsPredicted.toFixed(1) : yearsPredicted}
+        </span>
         <span className="text-xs text-text-light/50 dark:text-gray-500">Years Predicted</span>
       </div>
     </div>
