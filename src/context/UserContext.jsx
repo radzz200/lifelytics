@@ -38,8 +38,20 @@ export const UserProvider = ({ children }) => {
     localStorage.removeItem('lifespan_predictions');
   };
 
+  const [engineEnabled, setEngineEnabled] = useState(true);
+
+  const toggleEngine = () => setEngineEnabled(prev => !prev);
+
   return (
-    <UserContext.Provider value={{ userData, updateUserData, predictions, setPredictions, clearData }}>
+    <UserContext.Provider value={{ 
+      userData, 
+      updateUserData, 
+      predictions, 
+      setPredictions, 
+      clearData, 
+      engineEnabled, 
+      toggleEngine 
+    }}>
       {children}
     </UserContext.Provider>
   );

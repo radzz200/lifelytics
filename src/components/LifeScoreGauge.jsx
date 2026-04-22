@@ -2,81 +2,112 @@ import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 
 export default function LifeScoreGauge({ biologicalAge, chronologicalAge, yearsPredicted }) {
-  const [animatedAge, setAnimatedAge] = useState(0);
+  const [animatedBio, setAnimatedBio] = useState(0);
 
   useEffect(() => {
-    const duration = 1200; // 1.2s
-    const steps = 60;
-    const stepTime = duration / steps;
-    const increment = biologicalAge / steps;
-    let current = 0;
-
-    const timer = setInterval(() => {
-      current += increment;
-      if (current >= biologicalAge) {
-        setAnimatedAge(biologicalAge);
-        clearInterval(timer);
-      } else {
-        setAnimatedAge(current);
-      }
-    }, stepTime);
-
-    return () => clearInterval(timer);
+    setAnimatedBio(biologicalAge);
   }, [biologicalAge]);
 
-  const radius = 100;
-  const stroke = 20;
-  const normalizedRadius = radius - stroke * 2;
-  const circumference = normalizedRadius * 2 * Math.PI;
+  const size = 280;
+  const center = size / 2;
+  const strokeWidth = 14;
+  const radius = (size / 2) - strokeWidth;
+  const circumference = radius * 2 * Math.PI;
   
-  // Fill logic: max age scale = 100. If 65, fill 65%. 
-  const fillPercentage = Math.min(100, Math.max(0, animatedAge));
-  const strokeDashoffset = circumference - (fillPercentage / 100) * circumference;
-
-  // Color logic based on Bio Age vs Chrono Age
-  let colorClass = 'text-teal'; // Safe: Bio < Chrono
-  if (animatedAge >= chronologicalAge + 2) {
-    colorClass = 'text-danger'; // Danger: Bio significantly > Chrono
-  } else if (animatedAge >= chronologicalAge) {
-    colorClass = 'text-amber'; // Normal/Warning: Bio slightly > Chrono or Equal
-  }
+  // Scale: 0 to 100 for the ring
+  const progress = (animatedBio / 100) * circumference;
+  const isHealthy = biologicalAge <= chronologicalAge;
+  const delta = Math.abs(biologicalAge - chronologicalAge).toFixed(1);
 
   return (
-    <div className="flex flex-col items-center justify-center relative w-64 h-64 mx-auto">
-      <svg height={radius * 2} width={radius * 2} className="transform -rotate-90">
+    <div className="relative flex items-center justify-center select-none" style={{ width: size, height: size }}>
+      {/* Dynamic Background Glow */}
+      <div className={`absolute inset-4 rounded-full blur-3xl opacity-10 transition-colors duration-1000 ${isHealthy ? 'bg-teal' : 'bg-rose-500'}`} />
+      
+      {/* SVG Rings */}
+      <svg width={size} height={size} className="transform -rotate-90 relative z-10">
+        <defs>
+          <linearGradient id="gaugeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor={isHealthy ? "#00F5D4" : "#f43f5e"} />
+            <stop offset="100%" stopColor={isHealthy ? "#0ea5e9" : "#94a3b8"} />
+          </linearGradient>
+        </defs>
+
+        {/* Background Track */}
         <circle
-          className="stroke-border-light dark:stroke-border-dark"
+          cx={center}
+          cy={center}
+          r={radius}
           fill="transparent"
-          strokeWidth={stroke}
-          r={normalizedRadius}
-          cx={radius}
-          cy={radius}
-        />
-        <motion.circle
           stroke="currentColor"
+          strokeWidth={strokeWidth}
+          className="text-slate-100 dark:text-slate-800/40"
+        />
+
+        {/* Progress Ring */}
+        <motion.circle
+          cx={center}
+          cy={center}
+          r={radius}
           fill="transparent"
-          strokeWidth={stroke}
+          stroke="url(#gaugeGradient)"
+          strokeWidth={strokeWidth}
           strokeLinecap="round"
-          strokeDasharray={circumference + ' ' + circumference}
-          style={{ strokeDashoffset }}
-          r={normalizedRadius}
-          cx={radius}
-          cy={radius}
-          className={`transition-all duration-300 ${colorClass}`}
+          strokeDasharray={circumference}
           initial={{ strokeDashoffset: circumference }}
-          animate={{ strokeDashoffset }}
-          transition={{ duration: 1.2, ease: "easeOut" }}
+          animate={{ strokeDashoffset: circumference - progress }}
+          transition={{ duration: 1.5, ease: "circOut" }}
+          className="drop-shadow-[0_0_12px_rgba(0,245,212,0.3)]"
+        />
+
+        {/* Small Reference Marker for Chrono Age */}
+        <motion.circle
+          cx={center}
+          cy={center}
+          r={radius}
+          fill="transparent"
+          stroke="currentColor"
+          strokeWidth={strokeWidth + 4}
+          strokeDasharray={`2 ${circumference}`}
+          initial={{ strokeDashoffset: circumference }}
+          animate={{ strokeDashoffset: circumference - ((chronologicalAge / 100) * circumference) }}
+          className="text-slate-400 dark:text-slate-500 opacity-50"
         />
       </svg>
-      <div className="absolute flex flex-col items-center justify-center">
-        <span className={`text-4xl font-bold font-display ${colorClass}`}>
-          {animatedAge.toFixed(1)}
-        </span>
-        <span className="text-sm text-text-light/60 dark:text-gray-400">Bio Age</span>
-        <span className="text-lg font-semibold mt-2 text-text-light dark:text-text-dark">
-          {typeof yearsPredicted === 'number' ? yearsPredicted.toFixed(1) : yearsPredicted}
-        </span>
-        <span className="text-xs text-text-light/50 dark:text-gray-500">Years Predicted</span>
+
+      {/* Center Intelligence Hub */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center z-20">
+        <div className="text-center space-y-0.5">
+          <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-950 dark:text-gray-400">
+            Biological
+          </p>
+          
+          <div className="flex items-baseline justify-center gap-1">
+            <motion.span 
+              key={biologicalAge}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className={`text-7xl font-black font-display tracking-tighter leading-none ${isHealthy ? 'text-slate-950 dark:text-white' : 'text-rose-600'}`}
+            >
+              {biologicalAge.toFixed(1)}
+            </motion.span>
+          </div>
+
+          <div className="pt-2">
+             <div className={`inline-flex items-center px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-widest ${isHealthy ? 'bg-teal/10 text-teal-800 dark:text-teal' : 'bg-rose-500/10 text-rose-800 dark:text-rose-500'}`}>
+                {isHealthy ? 'Optimal' : 'Elevated'} • {delta}Y {isHealthy ? 'Gain' : 'Loss'}
+             </div>
+          </div>
+
+          <div className="pt-6 flex flex-col items-center">
+            <div className="w-12 h-[1px] bg-slate-200 dark:bg-slate-800 mb-4" />
+            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-950 mb-1">Lifespan Prediction</p>
+            <div className="text-2xl font-black text-slate-950 dark:text-white flex items-baseline gap-1">
+              {yearsPredicted.toFixed(1)}
+              <span className="text-[10px] text-slate-950 font-black uppercase">yrs</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

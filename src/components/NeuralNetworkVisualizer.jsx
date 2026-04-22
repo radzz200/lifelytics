@@ -1,7 +1,10 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { useTheme } from '../context/ThemeContext';
 
 const NeuralNetworkVisualizer = () => {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   // 3 layers: input, hidden, output
   const layers = [
     [20, 40, 60, 80], // Input layer (y positions)
@@ -42,7 +45,7 @@ const NeuralNetworkVisualizer = () => {
                 stroke="url(#edgeGradient)"
                 strokeWidth="0.5"
                 initial={{ pathLength: 0, opacity: 0 }}
-                animate={{ pathLength: 1, opacity: [0.1, 0.4, 0.1] }}
+                animate={{ pathLength: 1, opacity: isDark ? [0.1, 0.4, 0.1] : [0.3, 0.8, 0.3] }}
                 transition={{
                   pathLength: { duration: 1.5, ease: "easeInOut" },
                   opacity: { duration: 2 + Math.random() * 2, repeat: Infinity, ease: "easeInOut" }
@@ -64,7 +67,7 @@ const NeuralNetworkVisualizer = () => {
               filter="url(#glow)"
               animate={{
                 r: lIndex === 2 ? [4, 5, 4] : [2, 3, 2],
-                opacity: [0.6, 1, 0.6]
+                opacity: isDark ? [0.6, 1, 0.6] : [0.8, 1, 0.8]
               }}
               transition={{
                 duration: 1.5 + Math.random(),

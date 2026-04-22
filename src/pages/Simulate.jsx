@@ -68,7 +68,11 @@ export default function Simulate() {
   };
 
   const yearsGained = (simData.prediction - basePrediction).toFixed(1);
-  const score = Math.min(100, Math.max(0, (simData.prediction / 100) * 100));
+  const currentAge = parseFloat(userData?.age) || 30;
+  
+  // Biological Age Heuristic for Simulation:
+  // If prediction increases, bio age decreases.
+  const biologicalAge = Math.max(18, currentAge - (simData.prediction - basePrediction) * 0.5);
 
   const saveScenario = () => {
     // Save to local storage for "Compare scenarios panel"
@@ -84,110 +88,120 @@ export default function Simulate() {
   };
 
   return (
-    <div className="min-h-screen pt-24 pb-12 px-6 max-w-7xl mx-auto">
-      <button onClick={() => navigate('/dashboard')} className="text-teal hover:underline flex items-center gap-2 mb-8">
-        <ArrowLeft className="w-4 h-4" /> Back to Dashboard
-      </button>
+    <div className="min-h-screen pt-28 pb-12 px-8 max-w-7xl mx-auto">
+      <div className="flex items-center justify-between mb-12">
+        <div>
+          <button onClick={() => navigate('/dashboard')} className="group text-slate-500 hover:text-teal flex items-center gap-2 mb-2 transition-colors text-xs font-black uppercase tracking-widest">
+            <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" /> Back to Intelligence Dashboard
+          </button>
+          <h1 className="text-4xl font-black tracking-tighter text-slate-950 dark:text-white">Neural Trajectory Simulator</h1>
+        </div>
+        <button onClick={saveScenario} className="px-6 py-2.5 rounded-2xl bg-teal text-slate-950 text-sm font-black flex items-center gap-2 hover:shadow-lg hover:shadow-teal/20 transition-all active:scale-95">
+          <Save className="w-4 h-4" /> Save Scenario
+        </button>
+      </div>
 
-      <div className="grid lg:grid-cols-2 gap-12">
+      <div className="grid lg:grid-cols-12 gap-12 items-start">
         {/* Left Column: Sliders */}
-        <div className="glass-panel p-8">
-          <h2 className="text-2xl font-display font-bold mb-6">Counterfactual Simulator</h2>
-          <p className="text-text-light/70 dark:text-gray-400 mb-8 text-sm">Adjust the modifiable factors below to see how they impact your lifespan trajectory in real-time.</p>
+        <div className="lg:col-span-7 bg-white dark:bg-slate-900 p-10 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm">
+          <div className="flex items-center gap-3 mb-8">
+            <div className="p-2.5 bg-teal/10 rounded-xl">
+              <Settings className="w-5 h-5 text-teal" />
+            </div>
+            <div>
+              <h2 className="text-xl font-black text-slate-950 dark:text-white leading-tight">Counterfactual Inputs</h2>
+              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Adjust modifiable longevity factors</p>
+            </div>
+          </div>
 
-          <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-4 custom-scrollbar">
+          <div className="space-y-8 pr-4">
             
-            <div>
-              <div className="flex justify-between mb-1 text-sm">
-                <label className="text-text-light/80 dark:text-gray-300">Cigarettes / Day</label>
-                <span className="font-mono text-teal">{sliders.cigarettes}</span>
+            <div className="space-y-3">
+              <div className="flex justify-between items-end">
+                <label className="text-xs font-black text-slate-900 dark:text-gray-300 uppercase tracking-tight">Cigarettes / Day</label>
+                <span className="font-mono text-lg font-black text-teal">{sliders.cigarettes}</span>
               </div>
-              <input type="range" name="cigarettes" min="0" max="40" step="1" value={sliders.cigarettes} onChange={handleSliderChange} className="w-full accent-teal" />
+              <input type="range" name="cigarettes" min="0" max="40" step="1" value={sliders.cigarettes} onChange={handleSliderChange} className="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-lg appearance-none cursor-pointer accent-teal" />
             </div>
 
-            <div>
-              <div className="flex justify-between mb-1 text-sm">
-                <label className="text-text-light/80 dark:text-gray-300">Alcohol Units / Week</label>
-                <span className="font-mono text-teal">{sliders.alcohol_units}</span>
+            <div className="space-y-3">
+              <div className="flex justify-between items-end">
+                <label className="text-xs font-black text-slate-900 dark:text-gray-300 uppercase tracking-tight">Alcohol Units / Week</label>
+                <span className="font-mono text-lg font-black text-teal">{sliders.alcohol_units}</span>
               </div>
-              <input type="range" name="alcohol_units" min="0" max="35" step="1" value={sliders.alcohol_units} onChange={handleSliderChange} className="w-full accent-teal" />
+              <input type="range" name="alcohol_units" min="0" max="35" step="1" value={sliders.alcohol_units} onChange={handleSliderChange} className="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-lg appearance-none cursor-pointer accent-teal" />
             </div>
 
-            <div>
-              <div className="flex justify-between mb-1 text-sm">
-                <label className="text-text-light/80 dark:text-gray-300">Exercise Days / Week</label>
-                <span className="font-mono text-teal">{sliders.exercise_days}</span>
+            <div className="space-y-3">
+              <div className="flex justify-between items-end">
+                <label className="text-xs font-black text-slate-900 dark:text-gray-300 uppercase tracking-tight">Exercise Days / Week</label>
+                <span className="font-mono text-lg font-black text-teal">{sliders.exercise_days}</span>
               </div>
-              <input type="range" name="exercise_days" min="0" max="7" step="1" value={sliders.exercise_days} onChange={handleSliderChange} className="w-full accent-teal" />
+              <input type="range" name="exercise_days" min="0" max="7" step="1" value={sliders.exercise_days} onChange={handleSliderChange} className="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-lg appearance-none cursor-pointer accent-teal" />
             </div>
 
-            <div>
-              <div className="flex justify-between mb-1 text-sm">
-                <label className="text-text-light/80 dark:text-gray-300">Sleep Hours</label>
-                <span className="font-mono text-teal">{sliders.sleep}</span>
+            <div className="space-y-3">
+              <div className="flex justify-between items-end">
+                <label className="text-xs font-black text-slate-900 dark:text-gray-300 uppercase tracking-tight">Sleep Hours</label>
+                <span className="font-mono text-lg font-black text-teal">{sliders.sleep}h</span>
               </div>
-              <input type="range" name="sleep" min="4" max="10" step="0.5" value={sliders.sleep} onChange={handleSliderChange} className="w-full accent-teal" />
+              <input type="range" name="sleep" min="4" max="10" step="0.5" value={sliders.sleep} onChange={handleSliderChange} className="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-lg appearance-none cursor-pointer accent-teal" />
             </div>
 
-            <div>
-              <div className="flex justify-between mb-1 text-sm">
-                <label className="text-text-light/80 dark:text-gray-300">Stress Level (1-10)</label>
-                <span className="font-mono text-teal">{sliders.stress}</span>
+            <div className="space-y-3">
+              <div className="flex justify-between items-end">
+                <label className="text-xs font-black text-slate-900 dark:text-gray-300 uppercase tracking-tight">Stress Level (1-10)</label>
+                <span className="font-mono text-lg font-black text-teal">{sliders.stress}</span>
               </div>
-              <input type="range" name="stress" min="1" max="10" step="1" value={sliders.stress} onChange={handleSliderChange} className="w-full accent-teal" />
+              <input type="range" name="stress" min="1" max="10" step="1" value={sliders.stress} onChange={handleSliderChange} className="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-lg appearance-none cursor-pointer accent-teal" />
             </div>
 
-            <div>
-              <div className="flex justify-between mb-1 text-sm">
-                <label className="text-text-light/80 dark:text-gray-300">Fruit & Veg (Servings/day)</label>
-                <span className="font-mono text-teal">{sliders.fruit_veg}</span>
+            <div className="space-y-3">
+              <div className="flex justify-between items-end">
+                <label className="text-xs font-black text-slate-900 dark:text-gray-300 uppercase tracking-tight">Target BMI</label>
+                <span className="font-mono text-lg font-black text-teal">{sliders.bmi}</span>
               </div>
-              <input type="range" name="fruit_veg" min="0" max="10" step="1" value={sliders.fruit_veg} onChange={handleSliderChange} className="w-full accent-teal" />
-            </div>
-
-            <div>
-              <div className="flex justify-between mb-1 text-sm">
-                <label className="text-text-light/80 dark:text-gray-300">Water Intake (L/day)</label>
-                <span className="font-mono text-teal">{sliders.water}</span>
-              </div>
-              <input type="range" name="water" min="0" max="4" step="0.5" value={sliders.water} onChange={handleSliderChange} className="w-full accent-teal" />
-            </div>
-
-            <div>
-              <div className="flex justify-between mb-1 text-sm">
-                <label className="text-text-light/80 dark:text-gray-300">Target BMI</label>
-                <span className="font-mono text-teal">{sliders.bmi}</span>
-              </div>
-              <input type="range" name="bmi" min="15" max="45" step="0.1" value={sliders.bmi} onChange={handleSliderChange} className="w-full accent-teal" />
+              <input type="range" name="bmi" min="15" max="45" step="0.1" value={sliders.bmi} onChange={handleSliderChange} className="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-lg appearance-none cursor-pointer accent-teal" />
             </div>
 
           </div>
         </div>
 
         {/* Right Column: Live Gauge */}
-        <div className="flex flex-col space-y-8">
-          <div className="glass-panel p-8 flex flex-col items-center justify-center flex-1">
-            <h3 className="text-lg font-semibold mb-8 text-text-light/80 dark:text-gray-300">Simulated Trajectory</h3>
-            <LifeScoreGauge score={score} yearsPredicted={simData.prediction} />
+        <div className="lg:col-span-5 space-y-8">
+          <div className="bg-white dark:bg-slate-900 p-10 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-xl flex flex-col items-center justify-center relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-1 bg-teal/30" />
             
-            <div className="mt-8 text-center space-y-2">
-              <div className="text-text-light/70 dark:text-gray-400">Base Prediction: <span className="text-text-light dark:text-text-dark font-mono">{basePrediction} years</span></div>
-              <div className="text-text-light/70 dark:text-gray-400">With these changes: <span className="text-text-light dark:text-text-dark font-mono">{simData.prediction.toFixed(1)} years</span></div>
+            <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 mb-8">Live Neural Projection</h3>
+            
+            <LifeScoreGauge biologicalAge={biologicalAge} chronologicalAge={currentAge} yearsPredicted={simData.prediction} />
+            
+            <div className="mt-12 w-full space-y-4">
+              <div className="flex justify-between items-center py-3 border-b border-slate-100 dark:border-slate-800/50">
+                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Base Projection</span>
+                <span className="font-mono font-black text-slate-900 dark:text-white">{basePrediction.toFixed(1)} <span className="text-[10px]">yrs</span></span>
+              </div>
               
-              <motion.div 
-                key={yearsGained}
-                initial={{ scale: 1.2, color: '#fff' }}
-                animate={{ scale: 1, color: yearsGained > 0 ? '#00F5D4' : yearsGained < 0 ? '#FF4D4F' : '#9CA3AF' }}
-                className="text-3xl font-bold font-mono mt-4"
-              >
-                {yearsGained > 0 ? '+' : ''}{yearsGained} <span className="text-sm font-sans font-normal">years gained</span>
-              </motion.div>
+              <div className="flex justify-between items-center py-3">
+                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Net Trajectory Shift</span>
+                <motion.div 
+                  key={yearsGained}
+                  initial={{ scale: 1.2 }}
+                  animate={{ scale: 1 }}
+                  className={`text-2xl font-black font-mono ${parseFloat(yearsGained) > 0 ? 'text-teal' : parseFloat(yearsGained) < 0 ? 'text-rose-500' : 'text-slate-500'}`}
+                >
+                  {parseFloat(yearsGained) > 0 ? '+' : ''}{yearsGained} <span className="text-xs font-sans">Yrs</span>
+                </motion.div>
+              </div>
             </div>
           </div>
 
-          <button onClick={saveScenario} className="btn-secondary flex items-center justify-center gap-2 w-full py-4">
-            <Save className="w-5 h-5" /> Save Scenario
-          </button>
+          <div className="bg-teal/5 border border-teal/10 p-6 rounded-3xl">
+             <p className="text-[11px] text-teal-800 dark:text-teal-400 leading-relaxed font-bold">
+               <Zap className="w-3 h-3 inline mr-2" />
+               Counterfactual logic is processed in-browser. Adjusting these parameters simulates biological outcomes based on actuarial Gompertz mortality laws.
+             </p>
+          </div>
         </div>
       </div>
     </div>

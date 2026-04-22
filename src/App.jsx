@@ -20,7 +20,7 @@ function App() {
         <Router>
           <div className="min-h-screen bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark transition-colors duration-300">
             <Navbar />
-            <div className="pt-16"> {/* Spacer for fixed navbar */}
+            <div className="pt-16"> {/* Balanced spacer for navbar height */}
               <Routes>
                 <Route path="/" element={<Landing />} />
                 <Route path="/onboarding" element={<Onboarding />} />

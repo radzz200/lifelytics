@@ -3,17 +3,18 @@ import { useDropzone } from 'react-dropzone';
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
 import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, Cell, PieChart, Pie } from 'recharts';
-import { ArrowLeft, BrainCircuit, Activity, HeartPulse, Filter } from 'lucide-react';
+import { ArrowLeft, BrainCircuit, Activity, HeartPulse, Filter, CheckCircle, Zap, ShieldAlert, TrendingDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { processHealthData } from '../ml/healthPredictEngine';
 import { useTheme } from '../context/ThemeContext';
+import { useUser } from '../context/UserContext';
 import { incrementGlobalCounter } from '../utils/stats';
 import { predictLifespan, loadModel } from '../ml/predict';
-import { CheckCircle, Zap, ShieldAlert, TrendingDown } from 'lucide-react';
 
 export default function DoctorPortal() {
   const { theme } = useTheme();
+  const { engineEnabled } = useUser();
   const isDark = theme === 'dark';
   const navigate = useNavigate();
   const [rawData, setRawData] = useState(null);
@@ -478,14 +479,19 @@ export default function DoctorPortal() {
             </h3>
             <div className="space-y-4">
               {aiAnalysis.riskProfiles.map((profile, i) => (
-                <div key={i} className="flex flex-col md:flex-row justify-between items-start md:items-center p-6 bg-surface-light/50 dark:bg-surface-dark/50 rounded-2xl border border-border-light/20 dark:border-border-dark/20">
-                  <div>
-                    <div className="text-sm font-bold text-gray-500 mb-1">RECORD ID: {profile.id}</div>
-                    <div className="text-xl font-bold text-text-light dark:text-white">{profile.prediction} Year Prediction</div>
+                <div key={i} className="flex flex-col items-center text-center p-8 bg-surface-light/30 dark:bg-surface-dark/30 rounded-3xl border border-border-light/10 dark:border-border-dark/10 hover:border-rose-500/30 transition-all duration-300 hover:shadow-2xl hover:shadow-rose-500/5 group">
+                  <div className="mb-6">
+                    <div className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-2 opacity-60">PATIENT RECORD: {profile.id}</div>
+                    <div className="text-3xl font-bold text-text-light dark:text-white font-mono group-hover:text-rose-400 transition-colors">{profile.prediction} <span className="text-sm font-normal text-gray-500">YEARS</span></div>
                   </div>
-                  <div className="mt-4 md:mt-0 max-w-md">
-                    <div className="text-xs font-bold text-rose-500 uppercase mb-2">Neural Recommendation</div>
-                    <p className="text-sm text-gray-400 italic">"{profile.risks[0] || 'High risk profile detected'}"</p>
+                  
+                  <div className="w-12 h-px bg-gradient-to-r from-transparent via-rose-500/30 to-transparent mb-6"></div>
+                  
+                  <div className="max-w-md">
+                    <div className="text-xs font-bold text-rose-500 uppercase tracking-widest mb-3">Neural Recommendation</div>
+                    <p className="text-lg text-slate-800 dark:text-gray-300 italic font-medium leading-relaxed">
+                      "{profile.risks[0] || 'High risk profile detected'}"
+                    </p>
                   </div>
                 </div>
               ))}
@@ -507,7 +513,7 @@ export default function DoctorPortal() {
     >
       <button 
         onClick={() => navigate('/')} 
-        className="inline-flex items-center gap-2 mb-8 py-2 px-6 bg-slate-900 text-white rounded-xl font-bold border-2 border-transparent hover:bg-white hover:text-black hover:border-indigo-600 hover:shadow-[0_0_15px_rgba(99,102,241,0.3)] group transition-all duration-300 shadow-lg"
+        className="inline-flex items-center gap-2 mb-8 py-2 px-6 bg-slate-900 text-white rounded-xl font-bold border-2 border-transparent hover:bg-white hover:text-black hover:shadow-[0_0_15px_rgba(99,102,241,0.3)] group transition-all duration-300 shadow-lg"
       >
         <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> 
         Back to Home
@@ -523,25 +529,42 @@ export default function DoctorPortal() {
           </p>
           
           <div 
-            {...getRootProps()} 
-            className={`border-2 border-dashed rounded-3xl p-16 text-center cursor-pointer transition-all duration-300 ${
-              isDragActive ? 'border-teal bg-teal/10 scale-[1.02]' : 'border-border hover:border-teal/50 hover:bg-surface/50 hover:shadow-lg hover:shadow-teal/10'
+            {...(engineEnabled ? getRootProps() : {})} 
+            className={`border-2 border-dashed rounded-3xl p-16 text-center transition-all duration-300 relative overflow-hidden ${
+              !engineEnabled 
+                ? 'border-rose-500/30 bg-rose-500/5 cursor-not-allowed' 
+                : isDragActive 
+                  ? 'border-teal bg-teal/10 scale-[1.02]' 
+                  : 'border-border hover:border-teal/50 hover:bg-surface/50 hover:shadow-lg hover:shadow-teal/10 cursor-pointer'
             }`}
           >
-            <input {...getInputProps()} />
-            <motion.div
-              animate={{ y: [0, -10, 0] }}
-              transition={{ repeat: Infinity, duration: 2 }}
-            >
-              <BrainCircuit className="w-16 h-16 text-teal mx-auto mb-6" />
-            </motion.div>
-            {isDragActive ? (
-              <p className="text-teal font-medium text-xl">Drop the dataset here ...</p>
-            ) : (
-              <div>
-                <p className="text-slate-900 dark:text-gray-200 text-xl font-medium mb-2">Drag & drop your CSV or Excel file here</p>
-                <p className="text-slate-600 dark:text-gray-500">Must include: age, bmi, smoking, alcohol, exercise_level, heart_disease, etc.</p>
+            <input {...(engineEnabled ? getInputProps() : {})} disabled={!engineEnabled} />
+            
+            {!engineEnabled ? (
+              <div className="flex flex-col items-center">
+                <ShieldAlert className="w-16 h-16 text-rose-500 mb-4 animate-pulse" />
+                <h3 className="text-xl font-black text-slate-950 dark:text-white uppercase mb-2">Neural Engine Offline</h3>
+                <p className="text-slate-600 dark:text-gray-400 text-sm font-medium">
+                  Please turn on the engine to enable high-fidelity cohort analysis.
+                </p>
               </div>
+            ) : (
+              <>
+                <motion.div
+                  animate={{ y: [0, -10, 0] }}
+                  transition={{ repeat: Infinity, duration: 2 }}
+                >
+                  <BrainCircuit className="w-16 h-16 text-teal mx-auto mb-6" />
+                </motion.div>
+                {isDragActive ? (
+                  <p className="text-teal font-medium text-xl">Drop the dataset here ...</p>
+                ) : (
+                  <div>
+                    <p className="text-slate-900 dark:text-gray-200 text-xl font-medium mb-2">Drag & drop your CSV or Excel file here</p>
+                    <p className="text-slate-600 dark:text-gray-500">Must include: age, bmi, smoking, alcohol, exercise_level, heart_disease, etc.</p>
+                  </div>
+                )}
+              </>
             )}
           </div>
           

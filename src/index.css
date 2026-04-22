@@ -1,10 +1,23 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Sora:wght@400;600;700;800&family=Outfit:wght@400;600;700;800&family=Poppins:wght@300;400;500;600;700;800;900&family=Bebas+Neue&family=M+PLUS+Rounded+1c:wght@500;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Sora:wght@400;600;700;800&family=Outfit:wght@400;600;700;800&family=Poppins:wght@300;400;500;600;700;800;900&family=Bebas+Neue&display=swap');
-
 @layer base {
+  .font-rounded {
+    font-family: "M PLUS Rounded 1c", sans-serif;
+  }
+  
+  .font-rounded-medium {
+    font-family: "M PLUS Rounded 1c", sans-serif;
+    font-weight: 500;
+  }
+
+  .font-rounded-bold {
+    font-family: "M PLUS Rounded 1c", sans-serif;
+    font-weight: 700;
+  }
   body {
     @apply bg-background-light text-slate-900 dark:bg-background-dark dark:text-text-dark font-body antialiased transition-colors duration-300;
   }
