@@ -53,7 +53,7 @@ export function calculateLifespan(person) {
   if (cholesterol > 240) adjustments -= 3;
   
   let finalLifespan = baseLifespan + adjustments;
-  finalLifespan = Math.min(100, Math.max(40, finalLifespan));
+  finalLifespan = Math.min(100, Math.max(age + 1, finalLifespan));
   const finalLifespanInt = Math.round(finalLifespan);
   
   return {

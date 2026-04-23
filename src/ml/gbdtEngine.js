@@ -25,7 +25,8 @@ export function predictLife(model, record) {
     pred += model.learning_rate * walkTree(tree);
   }
   
-  pred = Math.max(38, Math.min(100, pred));
+  const age = parseFloat(record.age) || 30;
+  pred = Math.max(age + 1, Math.min(100, pred));
   const mae = model.metrics.mae || 2.0;
 
   return {

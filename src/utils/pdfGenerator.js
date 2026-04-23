@@ -18,11 +18,11 @@ export const generateLongevityAudit = async (userData, predictions, dashboardEle
   doc.setTextColor(30, 41, 59); // Slate 800
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(22);
-  doc.text('LIFELYTICS CLINICAL REPORT', margin, 25);
+  doc.text('DIAGNOSTIC LONGEVITY REPORT', margin, 25);
   
-  doc.setFontSize(10);
+  doc.setFontSize(9);
   doc.setTextColor(100, 116, 139);
-  doc.text('DEPARTMENT OF LONGEVITY AND PREVENTATIVE MEDICINE', margin, 32);
+  doc.text('CENTRAL LABORATORY FOR PREVENTATIVE MEDICINE & AI PROGNOSIS', margin, 32);
 
   doc.setDrawColor(226, 232, 240);
   doc.setLineWidth(0.5);
@@ -41,11 +41,14 @@ export const generateLongevityAudit = async (userData, predictions, dashboardEle
 
   const currentAge = parseFloat(userData.age) || 30;
 
-  drawField('Patient ID', 'LX-' + Math.floor(Math.random() * 1000000), margin, 48);
-  drawField('Date', new Date().toLocaleDateString(), margin + 90, 48);
+  const reportId = 'LL-' + Math.random().toString(36).substr(2, 9).toUpperCase();
+  const date = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
+
+  drawField('Report ID', reportId, margin, 48);
+  drawField('Date Issued', date, margin + 90, 48);
   
   drawField('Age', currentAge, margin, 56);
-  drawField('Gender', userData.gender || 'Not specified', margin + 90, 56);
+  drawField('Gender', (userData.gender || 'Not specified').toUpperCase(), margin + 90, 56);
   
   drawField('Height (cm)', userData.height, margin, 64);
   drawField('Weight (kg)', userData.weight, margin + 90, 64);
@@ -127,6 +130,14 @@ export const generateLongevityAudit = async (userData, predictions, dashboardEle
     currentY += 4;
   });
 
+  // Clinical Validation Section
+  currentY += 10;
+  doc.setDrawColor(200, 200, 200);
+  doc.line(margin, currentY, margin + 60, currentY);
+  doc.setFontSize(8);
+  doc.text('Authorized Diagnostic Signature', margin, currentY + 4);
+  doc.text('LifeLytics AI Neural Engine v2.4.0', margin, currentY + 8);
+
   // Footer
   doc.setFontSize(8);
   doc.setTextColor(148, 163, 184);
@@ -134,5 +145,6 @@ export const generateLongevityAudit = async (userData, predictions, dashboardEle
   const splitFooter = doc.splitTextToSize(footerText, pageWidth - (margin * 2));
   doc.text(splitFooter, margin, pageHeight - 15);
 
-  doc.save(`Lifelytics_Clinical_Audit_${new Date().toISOString().split('T')[0]}.pdf`);
+  const fileName = `LifeLytics_Report_${new Date().toISOString().split('T')[0]}.pdf`;
+  doc.save(fileName);
 };

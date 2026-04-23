@@ -428,12 +428,32 @@ export default function Landing() {
             <p className="text-slate-900 dark:text-gray-200 text-sm max-w-xs font-bold leading-relaxed">AI-powered lifespan simulation and personalized health intelligence platform.</p>
           </div>
           
-          <div className="bg-surface-light dark:bg-surface-dark/50 border border-slate-200 dark:border-border-dark/50 p-4 rounded-xl flex items-center gap-4 shadow-sm">
-             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-teal flex items-center justify-center text-white font-black shadow-md">M</div>
-             <div>
-               <p className="text-[10px] text-slate-800 dark:text-gray-300 uppercase tracking-widest font-black mb-1">Academic Advisor</p>
-               <p className="text-base font-black text-slate-950 dark:text-white">[Mentor Name]</p>
-             </div>
+          <div className="flex flex-col sm:flex-row gap-12">
+            <div className="space-y-4">
+              <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-teal border-b border-teal/20 pb-1 mb-3">Academic Team</h4>
+              <div className="space-y-2">
+                {[
+                  "Ms. Radhika A, SRMIST, Chennai",
+                  "Dr. Saradha S, SRMIST, Chennai",
+                  "Dr. Kavitha D, SRMIST, Chennai",
+                  "Dr. Kavitha, SRMIST, Chennai"
+                ].map((name, i) => (
+                  <p key={i} className="text-[12px] font-bold text-slate-800 dark:text-gray-300">{name}</p>
+                ))}
+              </div>
+            </div>
+            
+            <div className="space-y-4">
+              <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-blue-500 border-b border-blue-500/20 pb-1 mb-3">Industry Experts</h4>
+              <div className="space-y-2">
+                {[
+                  "Dr. Mithileysh Sathiyanarayanan, MIT Square, London",
+                  "Dr. Sharanya Rajan, NHS England, UK"
+                ].map((name, i) => (
+                  <p key={i} className="text-[12px] font-bold text-slate-800 dark:text-gray-300">{name}</p>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
         <div className="max-w-7xl mx-auto mt-12 pt-8 border-t border-slate-200 dark:border-border-dark/10 text-center text-sm text-gray-500 flex flex-col md:flex-row justify-between items-center gap-4">

@@ -201,7 +201,7 @@ export default function Dashboard() {
             <ClipboardList className="w-4 h-4 text-slate-500" /> History
           </button>
           <button onClick={handleDownload} className="px-5 py-2.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-sm font-bold flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
-            <Download className="w-4 h-4 text-slate-500" /> Export Audit
+            <Download className="w-4 h-4 text-slate-500" /> Download Report
           </button>
           <button onClick={() => navigate('/simulate')} className="px-5 py-2.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-sm font-bold flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
             <Settings className="w-4 h-4 text-slate-500" /> Neural Simulator
