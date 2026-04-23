@@ -27,8 +27,16 @@ export const UserProvider = ({ children }) => {
 
   const updateUserData = (stepData) => {
     setUserData(prev => ({ ...prev, ...stepData }));
-    setPredictions(null);
-    localStorage.removeItem('lifespan_predictions');
+    
+    // Only clear predictions if the update contains actual health/demographic data
+    // (Ignore metadata-only updates like isNewEntry)
+    const metadataKeys = ['isNewEntry'];
+    const isMetadataOnly = Object.keys(stepData).every(key => metadataKeys.includes(key));
+
+    if (!isMetadataOnly) {
+      setPredictions(null);
+      localStorage.removeItem('lifespan_predictions');
+    }
   };
 
   const clearData = () => {

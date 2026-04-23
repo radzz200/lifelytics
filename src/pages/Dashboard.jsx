@@ -83,6 +83,7 @@ export default function Dashboard() {
           
           updateUserData({ isNewEntry: false });
         }
+        runningRef.current = false;
       } catch (err) {
         console.error('Prediction error:', err);
         setError("Engine Calibration Error: " + err.message);

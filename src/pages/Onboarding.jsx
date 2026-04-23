@@ -179,36 +179,52 @@ export default function Onboarding() {
 
   return (
     <div className="min-h-screen pt-24 pb-12 px-4 md:px-6 max-w-3xl mx-auto flex flex-col">
-      {/* 
-      {showBioScan && (
-        <BioSelfieScan 
-          onScanComplete={handleBioScanComplete} 
-          onCancel={() => {
-            setShowBioScan(false);
-            const nextIndex = currentQuestionIndex + 1;
-            setMessages(prev => [...prev, { sender: 'bot', text: "No problem, we'll continue with standard data collection." }]);
-            setIsTyping(true);
-            setTimeout(() => {
-              setMessages(prev => [...prev, { sender: 'bot', text: CHAT_QUESTIONS[nextIndex].text }]);
-            ))}
-            
-            {isTyping && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-4">
-                <div className="w-8 h-8 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center flex-shrink-0">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-hide">
+        <AnimatePresence>
+          {messages.map((msg, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, x: msg.sender === 'bot' ? -20 : 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              className={`flex ${msg.sender === 'bot' ? 'justify-start' : 'justify-end'} gap-3 mb-2`}
+            >
+              {msg.sender === 'bot' && (
+                <div className="w-8 h-8 rounded-full bg-teal/20 text-teal flex items-center justify-center flex-shrink-0">
                   <Bot size={16} />
                 </div>
-                <div className="bg-surface-light dark:bg-surface-dark border border-border-light/50 dark:border-border-dark/50 rounded-2xl rounded-tl-none px-4 py-3 flex gap-1 items-center">
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
+              )}
+              <div className={`max-w-[80%] px-4 py-3 rounded-2xl ${
+                msg.sender === 'bot' 
+                  ? 'bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-tl-none text-text-light dark:text-text-dark' 
+                  : 'bg-teal text-background-dark rounded-tr-none font-medium shadow-lg shadow-teal/10'
+              }`}>
+                {msg.text}
+              </div>
+              {msg.sender === 'user' && (
+                <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-500 flex items-center justify-center flex-shrink-0">
+                  <User size={16} />
                 </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-          <div ref={messagesEndRef} />
-        </div>
+              )}
+            </motion.div>
+          ))}
+          
+          {isTyping && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-4">
+              <div className="w-8 h-8 rounded-full bg-teal/20 text-teal flex items-center justify-center flex-shrink-0">
+                <Bot size={16} />
+              </div>
+              <div className="bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-2xl rounded-tl-none px-4 py-3 flex gap-1 items-center">
+                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+        <div ref={messagesEndRef} />
+      </div>
 
-        {/* Input Area */}
+      {/* Input Area */}
       <div className="p-4 border-t border-border-light dark:border-border-dark/50 bg-surface-light/50 dark:bg-surface-dark/50 relative">
         {!engineEnabled ? (
           <div className="flex flex-col items-center justify-center py-4 text-center">
@@ -219,6 +235,12 @@ export default function Onboarding() {
         ) : (
           !isTyping && currentQ && currentQuestionIndex < CHAT_QUESTIONS.length && (
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+              <div className="mb-6 px-1">
+                <p className="text-[10px] font-bold text-teal uppercase tracking-[0.2em] mb-2 opacity-80">Manual Entry Mode</p>
+                <h3 className="text-xl font-semibold text-slate-900 dark:text-white leading-tight tracking-tight">
+                  {currentQ.text}
+                </h3>
+              </div>
 
               {currentQ.type === 'boolean' && (
                 <div className="flex gap-4 justify-end">

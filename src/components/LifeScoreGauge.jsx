@@ -78,21 +78,21 @@ export default function LifeScoreGauge({ biologicalAge, chronologicalAge, yearsP
       {/* Center Intelligence Hub */}
       <div className="absolute inset-0 flex flex-col items-center justify-center z-20">
         <div className="text-center space-y-0.5">
-          <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-950 dark:text-gray-400">
-            Biological
+          <p className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-950 dark:text-gray-400">
+            Lifespan Prediction
           </p>
           
           <div className="flex items-baseline justify-center gap-1">
             <motion.span 
-              key={biologicalAge}
+              key={yearsPredicted}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className={`text-7xl font-black font-display tracking-tighter leading-none ${isHealthy ? 'text-slate-950 dark:text-white' : 'text-rose-600'}`}
+              className={`text-6xl font-black font-display tracking-tighter leading-none text-slate-950 dark:text-white`}
             >
-              {biologicalAge.toFixed(1)}
+              {yearsPredicted.toFixed(1)}
             </motion.span>
           </div>
-
+          
           <div className="pt-2">
              <div className={`inline-flex items-center px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-widest ${isHealthy ? 'bg-teal/10 text-teal-800 dark:text-teal' : 'bg-rose-500/10 text-rose-800 dark:text-rose-500'}`}>
                 {isHealthy ? 'Optimal' : 'Elevated'} • {delta}Y {isHealthy ? 'Gain' : 'Loss'}
@@ -101,9 +101,9 @@ export default function LifeScoreGauge({ biologicalAge, chronologicalAge, yearsP
 
           <div className="pt-6 flex flex-col items-center">
             <div className="w-12 h-[1px] bg-slate-200 dark:bg-slate-800 mb-4" />
-            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-950 mb-1">Lifespan Prediction</p>
+            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-950 mb-1">Biological Age</p>
             <div className="text-2xl font-black text-slate-950 dark:text-white flex items-baseline gap-1">
-              {yearsPredicted.toFixed(1)}
+              {biologicalAge.toFixed(1)}
               <span className="text-[10px] text-slate-950 font-black uppercase">yrs</span>
             </div>
           </div>

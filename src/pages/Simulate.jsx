@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../context/UserContext';
-import { runSimulation } from '../ml/counterfactual';
+import { predictLifespanFast } from '../ml/predict';
 import LifeScoreGauge from '../components/LifeScoreGauge';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Save } from 'lucide-react';
+import { ArrowLeft, Save, Settings, Zap, Activity } from 'lucide-react';
 
 export default function Simulate() {
   const navigate = useNavigate();
@@ -30,23 +30,18 @@ export default function Simulate() {
       return;
     }
     
-    // Set initial cigarettes based on string band
-    let initCigs = 0;
-    if (userData.smoking === '1-10') initCigs = 5;
-    if (userData.smoking === '11-20') initCigs = 15;
-    if (userData.smoking === '20+') initCigs = 25;
-    
-    // Set initial alcohol based on string band
-    let initAlc = 0;
-    if (userData.alcohol === '1-7') initAlc = 4;
-    if (userData.alcohol === '8-14') initAlc = 11;
-    if (userData.alcohol === '15-21') initAlc = 18;
-    if (userData.alcohol === '21+') initAlc = 25;
+    // Onboarding uses '1'/'0' strings for boolean fields
+    const initCigs = userData.smoking === '1' ? 10 : 0;
+    const initAlc = userData.alcohol === '1' ? 5 : 0;
+    const initEx = parseInt(userData.exercise_level) * 2 || 0;
+    const initStress = parseInt(userData.stress_level) * 2 || 5;
 
     setSliders(prev => ({
       ...prev,
       cigarettes: initCigs,
-      alcohol_units: initAlc
+      alcohol_units: initAlc,
+      exercise_days: Math.min(7, initEx),
+      stress: Math.min(10, initStress)
     }));
 
     setBasePrediction(predictions.prediction);
@@ -54,8 +49,18 @@ export default function Simulate() {
 
   useEffect(() => {
     if (userData) {
-      // Run simulation on every slider change
-      const result = runSimulation(userData, sliders);
+      // Map simulation sliders back to the categorical/numeric inputs the engine expects
+      const simulatedUser = {
+        ...userData,
+        smoking: sliders.cigarettes > 0 ? '1' : '0',
+        alcohol: sliders.alcohol_units > 0 ? '1' : '0',
+        exercise_level: Math.min(3, Math.floor(sliders.exercise_days / 2)).toString(),
+        sleep_hours: sliders.sleep.toString(),
+        stress_level: Math.min(5, Math.ceil(sliders.stress / 2)).toString(),
+        bmi: sliders.bmi
+      };
+      
+      const result = predictLifespanFast(simulatedUser);
       setSimData(result);
     }
   }, [sliders, userData]);
